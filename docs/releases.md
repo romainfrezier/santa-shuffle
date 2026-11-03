@@ -41,6 +41,10 @@ docker compose --env-file .env.docker up -d --no-build
 
 For PostgreSQL, add `-f compose.yaml -f compose.postgres.yaml` to **every** command and start the database before migrations. For upgrades, back up the database, storage and private configuration, stop app/worker/scheduler, pull the new image, migrate explicitly, then start all three services together. Restore the matching image and backup together if a schema rollback is unsafe. Never use `down -v` on data you intend to keep.
 
+### Existing pre-release PostgreSQL installations
+
+The v0.1.0 PostgreSQL image uses Debian Trixie; earlier development configurations used Bookworm. Fresh installations are unaffected. If you already initialized a PostgreSQL volume on Bookworm, do not reuse it directly with the Trixie image: changing libc/ICU versions can invalidate collation-dependent indexes. Stop all application writers, take a logical `pg_dump` backup with the old image, then restore it into a **new, separately named** PostgreSQL 18 Trixie volume. Verify data, indexes and application behavior before switching. Preserve the original volume, image digest and app key for rollback; do not treat an OS-image change as a routine container restart.
+
 ## Sources
 
 - [GitHub: publish Docker images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)

@@ -22,7 +22,7 @@ Each event has participant invitations, confirmation status, exclusions, notific
 
 Canonical repository: [romainfrezier/santa-shuffle](https://github.com/romainfrezier/santa-shuffle). Its visibility and release state are managed separately from this source tree.
 
-Requirements: PHP 8.4+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 24 and npm. The Composer lockfile was resolved and tested with PHP 8.5.
+Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm 12.2.1 (declared in `package.json`). The Composer lockfile was resolved and tested with PHP 8.5.
 
 ```sh
 cp .env.example .env
@@ -52,7 +52,7 @@ docker compose --env-file .env.docker up -d
 
 The app binds to http://localhost:8080 on loopback only. App, worker and scheduler share the persistent `storage` volume. Migrations are explicit; startup does not run them automatically. Never regenerate `APP_KEY` for an existing installation: stored encrypted tokens depend on it.
 
-On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Production URLs use the configured origin rather than trusting arbitrary proxies. A containerized reverse proxy can join the application network and use `app:8080`. Do not expose plain HTTP directly to the internet.
+On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Set `TRUSTED_PROXIES` to the proxy's exact IP or narrowly scoped CIDR as seen by the app (comma-separated for multiple proxies). Without this setting, visitors share the proxy's IP rate limits. Only `X-Forwarded-For` is trusted; production URLs still use `APP_URL`. Never use a wildcard or a network containing untrusted clients. A containerized reverse proxy can join the application network and use `app:8080`. Keep its address stable and do not expose plain HTTP directly to the internet. See [proxy configuration](docs/hardening.md#reverse-proxy-and-client-ip-addresses).
 
 To use a published image instead of building locally, set `SANTA_IMAGE` and follow [container releases](docs/releases.md). The tag workflow publishes to GHCR after checks pass. Repository creation, the first successful release and public package visibility are separate setup steps; an image is not assumed to exist before those steps succeed.
 
@@ -69,6 +69,8 @@ docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml u
 The override configures all three services for PostgreSQL 18 and adds a persistent database volume. For an external database, use only the main file and set Laravel's `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`. Changing engines does not migrate existing data.
 
 ## Checks
+
+See the [v0.1.0 dependency audit](docs/dependency-audit-0.1.0.md) for the stable versions and upstream-controlled transitive constraints checked before the first release.
 
 ```sh
 composer validate --strict
@@ -90,7 +92,7 @@ Use disposable databases only. CI runs PHP and concurrency tests on SQLite and P
 
 - **Health:** `docker compose --env-file .env.docker ps`; `/up` verifies Laravel startup, not SMTP delivery.
 - **Email failures:** inspect `php artisan queue:failed` in the worker, then retry with `queue:retry all` after fixing SMTP. Automatic retries are bounded. An ambiguous SMTP acceptance can produce a duplicate with the same participant link. Organizer codes are sent synchronously and are single-use.
-- **Upgrades:** back up first, stop app/worker/scheduler, build or pull the image, migrate explicitly, then restart all three services. Record the deployed image digest. Base image tags track their stable branches; lockfiles alone do not freeze the OS image.
+- **Upgrades:** back up first, stop app/worker/scheduler, build or pull the image, migrate explicitly, then restart all three services. Record the deployed image digest. Base images are pinned by version and digest; Dependabot proposes reviewed updates.
 - **Backups:** stop all three writers before copying SQLite storage. Keep `APP_KEY` and private configuration alongside a protected backup. For PostgreSQL use `pg_dump`, and test restoration in isolation. Never run `down -v` on an installation whose data you need.
 - **Retention:** event access expires 30 days after the gift date. The scheduler removes expired events and related data daily at 03:00 UTC. Pending expired login codes are purged hourly. Logs and backups need their own retention policy.
 
