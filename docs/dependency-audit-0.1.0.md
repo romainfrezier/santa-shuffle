@@ -11,6 +11,7 @@ Checked on 2026-11-03 against the official npm and Composer registries, upstream
 | Node.js | 26.13.0 LTS |
 | Debian application and build images | 13 (Trixie) |
 | PostgreSQL (optional) | 18.6 |
+| SQLite | 3.46.1 (Debian-maintained runtime library) |
 | Laravel / Inertia Laravel | 13.40.0 / 3.7.0 |
 | React / Inertia React | 19.3.1 / 3.11.0 |
 | TypeScript / Vite | 7.0.2 / 8.3.5 |
@@ -19,7 +20,7 @@ Checked on 2026-11-03 against the official npm and Composer registries, upstream
 
 All 25 direct npm dependencies match their registry `latest` stable release. After the PHPUnit 13.4.6 patch, `composer outdated --locked --format=json` reports no outdated packages, including transitive dependencies. Node 27 prereleases and PostgreSQL 19 release candidates are excluded.
 
-Docker bases use explicit versions and multi-platform manifest digests. CI uses Node 26 and PHP 8.5. The PHP development dependency tree requires at least PHP 8.4.1; the release image uses PHP 8.5.12. SQLite is supplied by the PHP/Debian image rather than a separately versioned application dependency.
+Docker bases use explicit versions and multi-platform manifest digests. CI uses Node 26 and PHP 8.5. The PHP development dependency tree requires at least PHP 8.4.1; the release image uses PHP 8.5.12. SQLite is supplied by the PHP/Debian image rather than a separately versioned application dependency. Distribution libraries follow Debian's maintained packages and backports; they are not claimed to match every upstream project's newest version.
 
 ## GitHub Actions
 
