@@ -26,6 +26,16 @@ After fixing SMTP, use the management resend action or `php artisan queue:retry 
 
 Organizer login codes use synchronous mail delivery, with database guards for single use, expiry and the attempt limit. A resend invalidates the previous code. Log-mail delivery is only for local development.
 
+## Reverse proxy and client IP addresses
+
+Set `TRUSTED_PROXIES` to a comma-separated list of the reverse proxy's exact IPv4/IPv6 addresses or narrowly scoped CIDRs, as seen by the application. The default is empty: forwarded headers are ignored. Behind a proxy, leaving it empty makes all visitors share the proxy's login, creation and other IP quotas. For example, `TRUSTED_PROXIES=172.30.0.2` is appropriate only if that is the verified, stable address of your proxy. Do not copy an example subnet without checking your network, use wildcard trust, or trust a shared network containing untrusted clients.
+
+Laravel's built-in middleware accepts only `X-Forwarded-For` from configured proxies. The proxy must append the actual client address or replace untrusted inbound forwarding headers; the rightmost address outside the trusted proxy chain identifies the client. Direct callers outside the allow-list cannot choose their quota by supplying this header. Forwarded host, scheme, port and prefix headers do not change the canonical production origin configured through `APP_URL`. Keep `SESSION_SECURE_COOKIE=true` behind public HTTPS and restrict direct access to the app.
+
+The shipped Compose file loads `TRUSTED_PROXIES` from `.env.docker` through `env_file`. Custom deployments must pass the variable to the application. Recreate containers after changing their environment, and regenerate Laravel's configuration cache if your deployment uses it. Proxy configuration is read from `config/app.php` during service-provider boot, so cached configurations retain the same trust boundary. Confirm distinct client IPs receive independent quotas after deployment without logging private access URLs.
+
+References: [Laravel trusted proxies](https://laravel.com/docs/13.x/requests#configuring-trusted-proxies), [configuration caching](https://laravel.com/docs/13.x/configuration#configuration-caching).
+
 ## Migration and rollback
 
 1. Back up the database, storage and APP_KEY. Never regenerate APP_KEY: existing encrypted tokens depend on it.

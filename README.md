@@ -52,7 +52,7 @@ docker compose --env-file .env.docker up -d
 
 The app binds to http://localhost:8080 on loopback only. App, worker and scheduler share the persistent `storage` volume. Migrations are explicit; startup does not run them automatically. Never regenerate `APP_KEY` for an existing installation: stored encrypted tokens depend on it.
 
-On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Production URLs use the configured origin rather than trusting arbitrary proxies. A containerized reverse proxy can join the application network and use `app:8080`. Do not expose plain HTTP directly to the internet.
+On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Set `TRUSTED_PROXIES` to the proxy's exact IP or narrowly scoped CIDR as seen by the app (comma-separated for multiple proxies). Without this setting, visitors share the proxy's IP rate limits. Only `X-Forwarded-For` is trusted; production URLs still use `APP_URL`. Never use a wildcard or a network containing untrusted clients. A containerized reverse proxy can join the application network and use `app:8080`. Keep its address stable and do not expose plain HTTP directly to the internet. See [proxy configuration](docs/hardening.md#reverse-proxy-and-client-ip-addresses).
 
 To use a published image instead of building locally, set `SANTA_IMAGE` and follow [container releases](docs/releases.md). The tag workflow publishes to GHCR after checks pass. Repository creation, the first successful release and public package visibility are separate setup steps; an image is not assumed to exist before those steps succeed.
 

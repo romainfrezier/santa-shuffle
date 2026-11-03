@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Exchange;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // An explicit empty fallback disables Laravel's host-based proxy auto-detection.
+        config(['trustedproxy.proxies' => config('app.trusted_proxies', [])]);
+        TrustProxies::withHeaders(Request::HEADER_X_FORWARDED_FOR);
+
         RateLimiter::for('login-send', fn (Request $request) => [Limit::perHour(10)->by('login-ip:'.$request->ip()), Limit::perHour(5)->by('login-email:'.hash('sha256', strtolower(is_string($request->input('email')) ? trim($request->input('email')) : '')))]);
         RateLimiter::for('login-verify', fn (Request $request) => Limit::perMinute(20)->by('login-verify:'.$request->ip()));
         RateLimiter::for('manage-event', fn (Request $request) => [Limit::perMinute(30)->by('manage-ip:'.$request->ip()), Limit::perHour(200)->by('manage-event:'.($request->route('exchange') instanceof Exchange ? $request->route('exchange')->uuid : $request->route('exchange')).':'.$request->session()->getId())]);
