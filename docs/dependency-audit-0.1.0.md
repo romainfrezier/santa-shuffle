@@ -9,6 +9,7 @@ Checked on 2026-11-03 against the official npm and Composer registries, upstream
 | PHP / FrankenPHP | 8.5.12 / 1.13.4 |
 | Composer | 2.11.1 |
 | Node.js | 26.13.0 LTS |
+| npm | 12.2.1 (explicitly installed in CI and the frontend build) |
 | Debian application and build images | 13 (Trixie) |
 | PostgreSQL (optional) | 18.6 |
 | SQLite | 3.46.1 (Debian-maintained runtime library) |

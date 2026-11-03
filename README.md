@@ -22,7 +22,7 @@ Each event has participant invitations, confirmation status, exclusions, notific
 
 Canonical repository: [romainfrezier/santa-shuffle](https://github.com/romainfrezier/santa-shuffle). Its visibility and release state are managed separately from this source tree.
 
-Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm. The Composer lockfile was resolved and tested with PHP 8.5.
+Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm 12.2.1 (declared in `package.json`). The Composer lockfile was resolved and tested with PHP 8.5.
 
 ```sh
 cp .env.example .env
