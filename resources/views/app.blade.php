@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#b62948"><meta name="referrer" content="no-referrer">
@@ -8,5 +8,5 @@
 @vite('resources/js/app.tsx')
 <x-inertia::head />
 </head>
-<body><x-inertia::app /><noscript>Activez JavaScript pour organiser votre Secret Santa.</noscript></body>
+<body><x-inertia::app /><noscript>{{ __('messages.javascript') }}</noscript></body>
 </html>

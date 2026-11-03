@@ -1,0 +1,1 @@
+<!doctype html><html lang="{{ app()->getLocale() }}"><body style="font-family:Arial,sans-serif;color:#263d34"><h1>{{ __('mail.login_title') }}</h1><p>{{ __('mail.login_body') }}</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold">{{ $code }}</p><p>{{ __('mail.login_expiry') }}</p><p>{{ __('mail.ignore') }}</p></body></html>

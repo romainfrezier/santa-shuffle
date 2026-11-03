@@ -1,10 +1,15 @@
 name: Checks
-on: [push, pull_request]
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_call:
 permissions:
   contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         database: [sqlite, pgsql]
@@ -20,21 +25,27 @@ jobs:
           --health-cmd "pg_isready -U santa_shuffle -d santa_shuffle_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: '8.5'
           extensions: pdo_sqlite, pdo_pgsql
-          coverage: none
-      - uses: actions/setup-node@v4
+          coverage: xdebug
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
           cache: npm
+      - run: composer validate --strict
+      - run: python3 -m unittest discover -s .github/scripts
       - run: composer install --prefer-dist --no-interaction
       - run: cp .env.example .env && php artisan key:generate
       - run: npm ci
       - run: npm run typecheck && npm run format:check && npm run build
+      - run: npm run test:unit
+      - run: node --test scripts/collect-licenses.test.mjs
       - run: vendor/bin/pint --test
+      - run: composer analyse
+      - run: composer audit --locked && npm audit
       - run: php artisan test
         env:
           DB_CONNECTION: ${{ matrix.database }}
@@ -43,3 +54,46 @@ jobs:
           DB_PORT: 5432
           DB_USERNAME: santa_shuffle
           DB_PASSWORD: testing
+      - run: php -d auto_prepend_file=tests/coverage-filter.php vendor/bin/phpunit --path-coverage --coverage-text=artifacts/coverage.txt --coverage-clover=artifacts/coverage.xml --coverage-html=artifacts/coverage
+        if: matrix.database == 'sqlite'
+        env:
+          XDEBUG_MODE: coverage
+      - run: php tests/Runtime/concurrency.php
+        env:
+          DB_CONNECTION: ${{ matrix.database }}
+          DB_DATABASE: santa_shuffle_test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_USERNAME: santa_shuffle
+          DB_PASSWORD: testing
+      - run: php tests/Runtime/mail.php
+        if: matrix.database == 'sqlite'
+      - run: npx playwright install --with-deps chromium && npm run test:e2e
+        if: matrix.database == 'sqlite'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: validation-${{ matrix.database }}
+          path: |
+            artifacts/coverage*
+            artifacts/playwright-report
+            artifacts/manage-*.png
+          retention-days: 7
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        database: [sqlite, pgsql]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker build -t santa-shuffle:local .
+      - run: python3 tests/Runtime/compose.py ${{ matrix.database }}
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner

@@ -1,120 +1,74 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Jobs\SendAccessLink;
+use App\Actions\Exchanges\AddExclusion;
+use App\Actions\Exchanges\CreateExchange;
+use App\Actions\Exchanges\DrawExchange;
+use App\Actions\Exchanges\RemoveExclusion;
+use App\Actions\Exchanges\RemoveParticipant;
+use App\Http\Requests\ConfirmEventRequest;
+use App\Http\Requests\ExchangeRequest;
 use App\Models\Exchange;
-use App\Services\DrawNames;
+use App\Services\SessionAccess;
+use App\ViewModels\ExchangeView;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ExchangeController extends Controller
 {
-    public function store(Request $request)
+    public function store(ExchangeRequest $request, CreateExchange $create): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'organizer_email' => ['required', 'email', 'max:254'],
-            'gift_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today', 'before_or_equal:'.now()->addYear()->format('Y-m-d')],
-            'budget' => ['required', 'integer', 'min:1', 'max:10000'],
-            'message' => ['nullable', 'string', 'max:1000'],
-        ]);
-        $token = Str::random(64);
-        $exchange = DB::transaction(function () use ($data, $token) {
-            $exchange = Exchange::create([...$data, 'organizer_email' => Str::lower($data['organizer_email']), 'uuid' => (string) Str::uuid(), 'access_hash' => hash('sha256', $token)]);
-            SendAccessLink::dispatch($exchange->organizer_email, $exchange->name, route('access.show', $token), 'organizer');
-
-            return $exchange;
-        });
+        $exchange = $create->execute($request->validated(), $request->session()->get('organizer_email'), app()->getLocale());
         $request->session()->regenerate();
-        $request->session()->put("managed.{$exchange->id}", true);
+        $request->session()->put("managed.{$exchange->id}", $exchange->access_version);
 
-        return to_route('exchanges.manage', $exchange)->with('notice', 'Votre Secret Santa est créé. Votre lien de gestion vous est envoyé par e-mail.');
+        return to_route('exchanges.manage', $exchange)->with('notice', __('messages.event_created'));
     }
 
-    public function show(Exchange $exchange)
+    public function show(Exchange $exchange): Response
     {
         $exchange->ensureActive();
 
-        return Inertia::render('Join', ['exchange' => $exchange->publicData(), 'count' => $exchange->participants()->whereNotNull('confirmed_at')->count()]);
+        return Inertia::render('Join', ['exchange' => ExchangeView::summary($exchange), 'count' => $exchange->participants()->whereNotNull('confirmed_at')->count()]);
     }
 
-    public function manage(Request $request, Exchange $exchange)
+    public function manage(Request $request, Exchange $exchange): Response
     {
-        $exchange->authorizeManager($request);
+        (new SessionAccess($request->session()))->authorizeManager($exchange, true);
 
-        return Inertia::render('Manage', [
-            'exchange' => $exchange->publicData(),
-            'inviteUrl' => route('exchanges.show', $exchange),
-            'participants' => $exchange->participants()->orderBy('id')->get()->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'confirmed' => $p->confirmed_at !== null, 'revealed' => $p->revealed_at !== null]),
-            'exclusions' => DB::table('exclusions')->where('exchange_id', $exchange->id)->get(['id', 'giver_id', 'recipient_id']),
-        ]);
+        return Inertia::render('Manage', ExchangeView::management($exchange));
     }
 
-    public function exclude(Request $request, Exchange $exchange)
+    public function exclude(Request $request, Exchange $exchange, AddExclusion $action): RedirectResponse
     {
-        $exchange->authorizeManager($request);
-        DB::transaction(function () use ($exchange, $request) {
-            $locked = Exchange::whereKey($exchange->id)->lockForUpdate()->firstOrFail();
-            abort_if($locked->drawn_at, 409);
-            $member = Rule::exists('participants', 'id')->where('exchange_id', $exchange->id);
-            $data = $request->validate(['giver_id' => ['required', 'integer', $member], 'recipient_id' => ['required', 'integer', 'different:giver_id', $member]]);
-            DB::table('exclusions')->updateOrInsert(['exchange_id' => $exchange->id, ...$data], []);
-        });
+        $action->execute($exchange, new SessionAccess($request->session()), $request->only('giver_id', 'recipient_id'));
 
-        return back()->with('notice', 'Exclusion ajoutée. Elle s’applique dans le sens indiqué.');
+        return to_route('exchanges.manage', $exchange)->with('notice', __('messages.exclusion_added'));
     }
 
-    public function removeExclusion(Request $request, Exchange $exchange, int $exclusion)
+    public function removeExclusion(Request $request, Exchange $exchange, int $exclusion, RemoveExclusion $action): RedirectResponse
     {
-        $exchange->authorizeManager($request);
-        DB::transaction(function () use ($exchange, $exclusion) {
-            $locked = Exchange::whereKey($exchange->id)->lockForUpdate()->firstOrFail();
-            abort_if($locked->drawn_at, 409);
-            DB::table('exclusions')->where('exchange_id', $exchange->id)->where('id', $exclusion)->delete();
-        });
+        $action->execute($exchange, new SessionAccess($request->session()), $exclusion);
 
-        return back();
+        return to_route('exchanges.manage', $exchange);
     }
 
-    public function removeParticipant(Request $request, Exchange $exchange, int $participant)
+    public function removeParticipant(Request $request, Exchange $exchange, int $participant, RemoveParticipant $action): RedirectResponse
     {
-        $exchange->authorizeManager($request);
-        DB::transaction(function () use ($exchange, $participant) {
-            $locked = Exchange::whereKey($exchange->id)->lockForUpdate()->firstOrFail();
-            abort_if($locked->drawn_at, 409);
-            $exchange->participants()->findOrFail($participant)->delete();
-        });
+        $action->execute($exchange, new SessionAccess($request->session()), $participant);
 
-        return back()->with('notice', 'Participation retirée.');
+        return to_route('exchanges.manage', $exchange)->with('notice', __('messages.participant_removed'));
     }
 
-    public function draw(Request $request, Exchange $exchange, DrawNames $draw)
+    public function draw(ConfirmEventRequest $request, Exchange $exchange, DrawExchange $draw): RedirectResponse
     {
-        $exchange->authorizeManager($request);
-        $request->validate(['confirm' => ['accepted']]);
-        DB::transaction(function () use ($exchange, $draw) {
-            $locked = Exchange::whereKey($exchange->id)->lockForUpdate()->firstOrFail();
-            if ($locked->drawn_at) {
-                throw ValidationException::withMessages(['draw' => 'Le tirage a déjà eu lieu. Les attributions sont conservées.']);
-            }
-            $people = $locked->participants()->get();
-            if ($people->contains(fn ($p) => ! $p->confirmed_at)) {
-                throw ValidationException::withMessages(['draw' => 'Chaque participant doit confirmer son e-mail avant le tirage.']);
-            }
-            $excluded = DB::table('exclusions')->where('exchange_id', $exchange->id)->get()->groupBy('giver_id')->map(fn ($rows) => $rows->pluck('recipient_id')->map(fn ($id) => (int) $id)->all())->all();
-            $pairs = $draw->assign($people->modelKeys(), $excluded);
-            foreach ($people as $person) {
-                $person->update(['recipient_id' => $pairs[$person->id]]);
-                SendAccessLink::dispatch($person->email, $locked->name, route('access.show', $person->access_token), 'draw');
-            }
-            $locked->update(['drawn_at' => now()]);
-        });
+        $draw->execute($exchange, new SessionAccess($request->session()));
 
-        return back()->with('notice', 'Le tirage est terminé ! Les enveloppes sont prêtes et les e-mails sont en cours d’envoi.');
+        return to_route('exchanges.manage', $exchange)->with('notice', __('messages.draw_completed'));
     }
 }

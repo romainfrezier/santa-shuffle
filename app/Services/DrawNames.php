@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use Illuminate\Validation\ValidationException;
@@ -12,7 +14,7 @@ class DrawNames
     public function assign(array $ids, array $exclusions): array
     {
         if (count($ids) < 3 || count($ids) > 100 || count(array_unique($ids)) !== count($ids)) {
-            throw ValidationException::withMessages(['draw' => 'Le tirage nécessite entre 3 et 100 participants distincts.']);
+            throw ValidationException::withMessages(['draw' => __('messages.draw_size')]);
         }
         $random = new Randomizer(new Secure);
         $choices = [];
@@ -38,7 +40,7 @@ class DrawNames
         foreach ($random->shuffleArray($ids) as $giver) {
             $seen = [];
             if (! $visit($giver, $seen)) {
-                throw ValidationException::withMessages(['draw' => 'Ces exclusions rendent le tirage impossible. Retirez une exclusion puis réessayez.']);
+                throw ValidationException::withMessages(['draw' => __('messages.draw_impossible')]);
             }
         }
 

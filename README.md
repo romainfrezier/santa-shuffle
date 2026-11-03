@@ -1,16 +1,28 @@
 # Santa Shuffle
 
-Un cadeau. Un secret. Un bon moment.
+A gift. A secret. A good time together.
 
-Secret Santa open source, auto-hébergeable, en français. Laravel 13, React 19, Inertia 3 et TypeScript. SQLite par défaut, PostgreSQL au choix. Licence MIT.
+A self-hosted Secret Santa for teams, built with Laravel 13, React 19, Inertia 3 and TypeScript. SQLite by default, PostgreSQL optional. English, French, Spanish and German interfaces. Project source is MIT licensed; dependencies retain their [own licenses](THIRD_PARTY_NOTICES.md).
 
-## Le parcours
+## How it works
 
-Créez un événement (nom, date, budget en euros, message), partagez son lien, puis attendez les confirmations par e-mail. Les participants peuvent ajouter leurs envies. L’organisateur définit des exclusions directionnelles et lance un tirage définitif. Chaque personne découvre uniquement son destinataire dans une enveloppe privée. De 3 à 100 participants.
+Sign in with an email code, create an event, share its invitation link, and wait for participants to confirm by email. Set the gift date, budget, currency and message. Participants can add gift wishes. The organizer can exclude specific giver/recipient pairs and draw names once everyone has confirmed. Each person opens a private envelope to discover only their recipient.
 
-## Développement local
+Events support 3–100 participants. Budgets use integer amounts in EUR, CHF, USD, CAD, GBP, JPY or AUD; there are no payments or currency conversions. Before any envelope is opened, the organizer can reopen registration, clear all assignments and draw again after adding people. The first reveal makes the assignments final.
 
-Prérequis : PHP 8.4+ avec PDO SQLite (PDO PostgreSQL pour PostgreSQL), Composer 2, Node.js 24 et npm. Le verrou Composer a été résolu et testé sous PHP 8.5.
+## Organizer access
+
+There are no passwords. `/login` sends a six-digit email code, valid for ten minutes and bound to the requesting browser. A code is single-use, has at most five attempts, and is replaced on resend. Sending is limited to one per minute, five per hour/address and ten per hour/IP; verification has a separate IP limit. The database stores an HMAC, not the plaintext code. Login regenerates the session; logout invalidates it.
+
+`/my-events` lists the events owned by the verified address and accessible to that session. Creating an event always uses the verified address, regardless of submitted fields. Knowing `/manage`, a participant link or a legacy organizer link does not grant organizer access. Control of the mailbox grants organizer access: this is not two-factor authentication.
+
+Each event has participant invitations, confirmation status, exclusions, notification status/retries, pre-draw editing, reopening before reveal, participant-link rotation, organizer session revocation, cancellation before drawing and permanent deletion. The organizer interface receives no participant emails, wishes or assignments. SMTP acceptance does not guarantee inbox delivery.
+
+## Local development
+
+Canonical repository: [romainfrezier/santa-shuffle](https://github.com/romainfrezier/santa-shuffle). Its visibility and release state are managed separately from this source tree.
+
+Requirements: PHP 8.4+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 24 and npm. The Composer lockfile was resolved and tested with PHP 8.5.
 
 ```sh
 cp .env.example .env
@@ -23,26 +35,30 @@ npm run build
 composer run dev
 ```
 
-Ouvrez http://localhost:8000. `composer run dev` démarre le serveur, Vite et le worker de file. `MAIL_MAILER=log` écrit les e-mails dans `storage/logs/laravel.log` **en développement seulement**. Cela inclut les liens privés. Pour de vrais envois, configurez `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` et `MAIL_FROM_ADDRESS`. Pour un serveur SMTP local sans authentification, utilisez des identifiants vides.
+Open http://localhost:8000. The development command starts the server, Vite and a queue worker. `MAIL_MAILER=log` writes emails, including private links and login codes, to `storage/logs/laravel.log`: use this **only in development**. With Docker's stderr logging, inspect local app logs privately instead. Never share those logs.
 
-## Docker : SQLite
+For real email delivery, configure `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` and `MAIL_FROM_ADDRESS`. Use empty credentials for a local SMTP service without authentication. Configure real SMTP and HTTPS before inviting real participants.
+
+## Docker with SQLite
 
 ```sh
 cp .env.docker.example .env.docker
 docker compose --env-file .env.docker build
-# Copiez la clé générée dans APP_KEY de .env.docker, une seule fois.
+# Copy the generated key into APP_KEY in .env.docker, once only.
 docker compose --env-file .env.docker run --rm --no-deps --entrypoint php app artisan key:generate --show
 docker compose --env-file .env.docker run --rm --no-deps app php artisan migrate --force
 docker compose --env-file .env.docker up -d
 ```
 
-L’application écoute sur http://localhost:8080, uniquement en loopback. L’application et son worker utilisent le même volume persistant `storage`. Les migrations sont une action explicite, jamais exécutées automatiquement au démarrage.
+The app binds to http://localhost:8080 on loopback only. App, worker and scheduler share the persistent `storage` volume. Migrations are explicit; startup does not run them automatically. Never regenerate `APP_KEY` for an existing installation: stored encrypted tokens depend on it.
 
-Avant les invitations réelles, configurez le SMTP. Pour le VPS, placez votre reverse proxy HTTPS devant le port 8080, définissez `APP_URL=https://votre-domaine` et `SESSION_SECURE_COOKIE=true`. Les URL sont forcées sur l’origine APP_URL en production, sans faire confiance à tous les proxys. Si votre proxy est dans Docker, reliez-le au réseau de l’application et pointez vers `app:8080`. Ne publiez pas directement HTTP sur Internet.
+On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Production URLs use the configured origin rather than trusting arbitrary proxies. A containerized reverse proxy can join the application network and use `app:8080`. Do not expose plain HTTP directly to the internet.
 
-## Docker : PostgreSQL
+To use a published image instead of building locally, set `SANTA_IMAGE` and follow [container releases](docs/releases.md). The tag workflow publishes to GHCR after checks pass. Repository creation, the first successful release and public package visibility are separate setup steps; an image is not assumed to exist before those steps succeed.
 
-Définissez `POSTGRES_PASSWORD` dans `.env.docker`, puis utilisez **les deux fichiers à chaque commande** :
+## Docker with PostgreSQL
+
+Build the image and generate `APP_KEY` as above. Set a strong `POSTGRES_PASSWORD` in `.env.docker` and use **both files for every command**:
 
 ```sh
 docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml up -d postgres
@@ -50,44 +66,59 @@ docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml r
 docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml up -d
 ```
 
-Construisez d’abord l’image et générez APP_KEY comme dans la section SQLite. Le second fichier remplace la connexion des deux services par PostgreSQL 18 et ajoute un volume persistant. Pour une base externe, gardez le premier fichier et renseignez les variables Laravel `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` dans `.env.docker`. Changer le moteur ne migre pas les données existantes.
+The override configures all three services for PostgreSQL 18 and adds a persistent database volume. For an external database, use only the main file and set Laravel's `DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`. Changing engines does not migrate existing data.
 
-## Vérifications
+## Checks
 
 ```sh
+composer validate --strict
 php artisan test
 vendor/bin/pint --test
+composer analyse
 npm run typecheck
 npm run format:check
+npm run test:unit
 npm run build
+npm run test:runtime
+npx playwright install chromium
+npm run test:e2e
 ```
 
-La CI exécute les mêmes tests avec SQLite et PostgreSQL. Sa configuration est fournie ; aucun succès GitHub Actions n’est revendiqué sans exécution sur GitHub. Voir [docs/validation.md](docs/validation.md) pour les vérifications réellement effectuées.
+Use disposable databases only. CI runs PHP and concurrency tests on SQLite and PostgreSQL, plus frontend tests, browser journeys, dependency audits, secret scanning and Docker backup/restore tests. [Validation records](docs/validation.md) distinguish checks actually run locally from configured GitHub Actions and production verification.
 
-## Exploitation
+## Operations
 
-- État : `docker compose --env-file .env.docker ps` ; `/up` vérifie que Laravel démarre (ce n’est pas une preuve de bon fonctionnement du SMTP).
-- E-mails : `docker compose --env-file .env.docker exec worker php artisan queue:failed`, puis `queue:retry all` une fois le SMTP corrigé. Trois tentatives automatiques ; un doublon reste possible si le serveur accepte un e-mail avant une coupure de connexion. Les liens sont réutilisables.
-- Mise à jour : sauvegardez, reconstruisez l’image, lancez explicitement les migrations, puis `up -d`. Redémarrez le worker avec l’application. Les tags de base Docker suivent leur branche stable ; conservez le digest de l’image déployée pour un retour arrière reproductible.
-- Sauvegarde SQLite : arrêtez temporairement **app et worker**, sauvegardez le volume `storage` et `.env.docker` dans un emplacement privé, puis redémarrez. Pour PostgreSQL utilisez `pg_dump` et sauvegardez également APP_KEY. Testez la restauration hors production.
-- N’exécutez pas `down -v` sur une installation à conserver : cela supprime ses volumes.
-- Les accès expirent 30 jours après la date des cadeaux. Les données restent en base jusqu’à suppression par l’exploitant ; aucune purge automatique dans cette version.
+- **Health:** `docker compose --env-file .env.docker ps`; `/up` verifies Laravel startup, not SMTP delivery.
+- **Email failures:** inspect `php artisan queue:failed` in the worker, then retry with `queue:retry all` after fixing SMTP. Automatic retries are bounded. An ambiguous SMTP acceptance can produce a duplicate with the same participant link. Organizer codes are sent synchronously and are single-use.
+- **Upgrades:** back up first, stop app/worker/scheduler, build or pull the image, migrate explicitly, then restart all three services. Record the deployed image digest. Base image tags track their stable branches; lockfiles alone do not freeze the OS image.
+- **Backups:** stop all three writers before copying SQLite storage. Keep `APP_KEY` and private configuration alongside a protected backup. For PostgreSQL use `pg_dump`, and test restoration in isolation. Never run `down -v` on an installation whose data you need.
+- **Retention:** event access expires 30 days after the gift date. The scheduler removes expired events and related data daily at 03:00 UTC. Pending expired login codes are purged hourly. Logs and backups need their own retention policy.
 
-## Confidentialité et limites
+See [hardening and operations](docs/hardening.md) for failure handling, migration and restore procedures.
 
-Les liens personnels sont des secrets d’accès : seuls les destinataires doivent les recevoir. Tokens aléatoires, empreintes SHA-256 pour recherche, tokens participants et jobs chiffrés au repos avec APP_KEY. Confirmation explicite par POST pour éviter qu’un scanner d’e-mail confirme une inscription en visitant un lien. Sessions HTTP-only, CSRF Laravel, limites de requêtes, réponses privées non mises en cache et politique sans référent. Ne journalisez pas les URL `/access/*` dans votre reverse proxy.
+## Privacy and limits
 
-L’interface organisateur ne reçoit ni les e-mails des participants, ni leurs envies, ni les attributions. **L’administrateur du serveur peut lire la base et les attributions** : il ne s’agit pas de chiffrement de bout en bout. Une personne qui possède le lien d’invitation peut s’inscrire ; partagez-le uniquement avec le groupe. Les protections anti-abus conviennent à une instance d’équipe ; un service public à grande échelle demanderait une politique d’accès supplémentaire.
+Participant links are access secrets: share them only with their recipients. Random tokens are looked up by SHA-256 hash and stored encrypted with `APP_KEY`; queued jobs are encrypted. Explicit POST activation prevents email scanners from confirming registration just by visiting a link. HTTP-only sessions, Laravel CSRF protection, request limits, private no-cache responses and a no-referrer policy protect browser access. Do not log `/access/*` URLs in your reverse proxy.
 
-Le tirage utilise un couplage biparti à chemins augmentants avec ordre aléatoire cryptographiquement sûr. Il trouve une solution si elle existe, sans boucle de tentatives aléatoires. Chaque participant donne et reçoit exactement une fois. Il n’est pas uniforme sur l’ensemble des tirages valides. Les exclusions sont directionnelles. Le tirage ne peut pas être relancé, et les inscriptions/modifications sont fermées après celui-ci.
+The server operator can read the database and assignments: this is **not end-to-end encryption**. Anyone with an invitation link can request registration; share it only with the group. A public service at scale needs additional access/abuse controls and operational review.
 
-## Documentation officielle utilisée
+The draw uses bipartite matching with augmenting paths and cryptographically shuffled traversal order. It finds a valid solution when one exists and gives each participant exactly one recipient. It is **not uniform across all valid matchings**. Exclusions are directional. Reopening before the first reveal clears old assignments and notifies participants; another explicit draw is required.
 
-Le setup suit les documentations des versions installées, consultées le 3 novembre 2026 :
+## Contributing and project policies
 
-- [Laravel : installation](https://laravel.com/docs/13.x/installation), [starter kits React](https://laravel.com/docs/13.x/starter-kits), [base de données](https://laravel.com/docs/13.x/database), [déploiement](https://laravel.com/docs/13.x/deployment), [files de tâches](https://laravel.com/docs/13.x/queues).
-- [Inertia 3 : installation serveur](https://inertiajs.com/docs/v3/installation/server-side-setup), [client React et Vite](https://inertiajs.com/docs/v3/installation/client-side-setup), [formulaires](https://inertiajs.com/docs/v3/the-basics/forms).
-- [React : créer une application](https://react.dev/learn/creating-a-react-app).
-- [FrankenPHP : image Docker](https://frankenphp.dev/docs/docker/), [Docker Compose : fusion de fichiers](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/), [image officielle PostgreSQL](https://hub.docker.com/_/postgres).
+- [Contribution guide](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [MIT license](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md)
+- [Container release procedure](docs/releases.md)
+- [Architecture and localization](docs/architecture.md)
+- [Product scope](PRODUCT.md) and [design direction](DESIGN.md)
 
-Le squelette provient de `composer create-project laravel/laravel`. Inertia est installé manuellement selon son guide officiel, pour conserver un parcours par liens privés sans comptes utilisateurs. CSS natif, police Manrope auto-hébergée via Fontsource (licence OFL incluse dans le paquet). Aucun asset Infomaniak réutilisé.
+Source identifiers, comments and developer documentation are English. User-facing text is translated into English, French, Spanish and German. Translation catalogs must remain aligned. There is no `CLAUDE.md`; repository guidance lives in `AGENTS.md`.
+
+## Official documentation
+
+- Laravel 13: [installation](https://laravel.com/docs/13.x/installation), [databases](https://laravel.com/docs/13.x/database), [deployment](https://laravel.com/docs/13.x/deployment), [queues](https://laravel.com/docs/13.x/queues), [sessions](https://laravel.com/docs/13.x/session), [rate limiting](https://laravel.com/docs/13.x/rate-limiting), [mail](https://laravel.com/docs/13.x/mail).
+- Inertia 3: [server setup](https://inertiajs.com/docs/v3/installation/server-side-setup), [client setup](https://inertiajs.com/docs/v3/installation/client-side-setup), [forms](https://inertiajs.com/docs/v3/the-basics/forms).
+- [React](https://react.dev/learn/creating-a-react-app), [FrankenPHP Docker](https://frankenphp.dev/docs/docker/), [Compose file merging](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/), [PostgreSQL image](https://hub.docker.com/_/postgres).
+
+The project began from `composer create-project laravel/laravel`, with Inertia installed manually. Fonts are self-hosted. No Infomaniak assets are reused.

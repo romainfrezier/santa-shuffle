@@ -1,5 +1,8 @@
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "../i18n/useTranslation";
 import { Head, Link, usePage } from "@inertiajs/react";
-import type { PropsWithChildren } from "react";
+import { useEffect, type PropsWithChildren } from "react";
+import { Toaster, toast } from "sonner";
 export function Mark() {
     return (
         <svg aria-hidden="true" viewBox="0 0 32 32" fill="none">
@@ -18,12 +21,24 @@ export default function Layout({
     children,
     home = false,
 }: PropsWithChildren<{ title: string; home?: boolean }>) {
-    const { notice } = usePage<{ notice?: string }>().props;
+    const { t, locale } = useTranslation();
+
+    const { notice, organizerEmail, hasAccess } = usePage<{
+        notice?: string;
+        organizerEmail?: string;
+        hasAccess?: boolean;
+    }>().props;
+    useEffect(() => {
+        document.documentElement.lang = locale;
+    }, [locale]);
+    useEffect(() => {
+        if (notice) toast.success(notice);
+    }, [notice]);
     return (
         <div className={home ? "site landing" : "site"}>
             <Head title={title} />
             <a className="skip" href="#main">
-                Aller au contenu
+                {t("Skip to content")}
             </a>
             <header className="header">
                 <Link className="brand" href="/">
@@ -32,38 +47,46 @@ export default function Layout({
                         Santa<span className="brand-light">Shuffle</span>
                     </span>
                 </Link>
-                <nav aria-label="Navigation principale">
-                    <a href="/#how">Comment ça marche</a>
+                <nav aria-label={t("Main navigation")}>
+                    <a href="/#how">{t("How it works")}</a>
+                    <Link href={organizerEmail ? "/my-events" : "/login"}>
+                        {organizerEmail ? t("My events") : t("Log in")}
+                    </Link>
                     {home ? (
                         <Link className="nav-button" href="/create">
-                            Organiser un Secret Santa{" "}
+                            {t("Organize a Secret Santa")}{" "}
                             <span aria-hidden="true">↗</span>
                         </Link>
-                    ) : (
+                    ) : hasAccess ? (
                         <Link
                             href="/logout"
                             method="post"
                             as="button"
                             className="text-button"
                         >
-                            Fermer ma session
+                            {t("Log out")}
                         </Link>
-                    )}
+                    ) : null}
+                    <LanguageSwitcher />
                 </nav>
             </header>
-            {notice && (
-                <div className="notice" role="status">
-                    {notice}
-                </div>
-            )}
+            <Toaster
+                position="bottom-right"
+                richColors
+                closeButton
+                containerAriaLabel={t("Notifications")}
+                toastOptions={{ closeButtonAriaLabel: t("Close notification") }}
+            />
             <main id="main">{children}</main>
             <footer>
                 <Link className="brand" href="/">
                     <Mark />
                     Santa Shuffle
                 </Link>
-                <span>Un cadeau. Un secret. Un bon moment.</span>
-                <span className="footer-note">Libre & auto-hébergeable</span>
+                <span>{t("One gift. One secret. A lovely moment.")}</span>
+                <span className="footer-note">
+                    {t("Open source & self-hosted")}
+                </span>
             </footer>
         </div>
     );

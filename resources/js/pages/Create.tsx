@@ -1,55 +1,61 @@
-import { Form, Link } from "@inertiajs/react";
+import { CurrencyField } from "../components/CurrencyField";
+import { useTranslation } from "../i18n/useTranslation";
+import { Form, Link, usePage } from "@inertiajs/react";
 import Layout from "../components/Layout";
 import { Field, TextArea } from "../components/Fields";
 export default function Create() {
+    const { t } = useTranslation();
+
+    const { organizerEmail } = usePage<{ organizerEmail: string }>().props;
     return (
-        <Layout title="Créer mon Secret Santa">
+        <Layout title={t("Create my Secret Santa")}>
             <div className="form-layout">
                 <aside>
                     <Link className="back" href="/">
-                        ← Retour à l’accueil
+                        {t("← Back to home")}
                     </Link>
                     <h1>
-                        Tout commence
+                        {t("It all starts")}
                         <br />
-                        par une invitation.
+                        {t("with an invitation.")}
                     </h1>
                     <p>
-                        Réunissez vos personnes préférées. On s’occupe du
-                        hasard.
+                        {t(
+                            "Bring your favorite people together. We’ll take care of the draw.",
+                        )}
                     </p>
                     <div className="aside-note">
-                        <strong>Un petit détail qui compte.</strong>
+                        <strong>{t("One little detail that matters.")}</strong>
                         <p>
-                            Vous êtes organisateur ? Vous pourrez aussi
-                            participer, en utilisant le lien d’invitation de
-                            votre groupe.
+                            {t(
+                                "Organizing? You can take part too, using your group’s invitation link.",
+                            )}
                         </p>
                     </div>
                 </aside>
                 <section className="paper">
-                    <h2>Votre Secret Santa</h2>
+                    <h2>{t("Your Secret Santa")}</h2>
                     <Form action="/events" method="post">
                         {({ errors, processing }) => (
                             <>
                                 <Field
-                                    label="Nom du groupe"
+                                    label={t("Group name")}
                                     name="name"
-                                    placeholder="Le Noël de l’équipe"
+                                    placeholder={t("The team’s Christmas")}
                                     maxLength={100}
                                     required
                                     error={errors.name}
                                 />
                                 <div className="form-row">
                                     <Field
-                                        label="Date des cadeaux"
+                                        label={t("Gift date")}
                                         name="gift_date"
                                         type="date"
                                         required
                                         error={errors.gift_date}
                                     />
                                     <Field
-                                        label="Budget par cadeau (€)"
+                                        label={t("Budget per gift")}
                                         name="budget"
                                         type="number"
                                         min={1}
@@ -59,26 +65,21 @@ export default function Create() {
                                         required
                                         error={errors.budget}
                                     />
+                                    <CurrencyField error={errors.currency} />
                                 </div>
-                                <Field
-                                    label="Votre adresse e-mail"
-                                    name="organizer_email"
-                                    type="email"
-                                    autoComplete="email"
-                                    maxLength={254}
-                                    required
-                                    placeholder="vous@exemple.fr"
-                                    error={errors.organizer_email}
-                                />
-                                <p className="field-hint">
-                                    Votre lien privé de gestion sera envoyé à
-                                    cette adresse.
+                                <p className="fine-print">
+                                    {t(
+                                        "Organized with {email}. Notifications will be sent to this verified address.",
+                                        { email: organizerEmail },
+                                    )}
                                 </p>
                                 <TextArea
-                                    label="Un petit mot pour l’équipe (facultatif)"
+                                    label={t("A note for the team (optional)")}
                                     name="message"
                                     maxLength={1000}
-                                    placeholder="On échange nos cadeaux autour d’un bon goûter ?"
+                                    placeholder={t(
+                                        "Shall we exchange gifts over something delicious?",
+                                    )}
                                     error={errors.message}
                                 />
                                 <button
@@ -86,13 +87,14 @@ export default function Create() {
                                     disabled={processing}
                                 >
                                     {processing
-                                        ? "Création en cours…"
-                                        : "Créer mon Secret Santa"}{" "}
+                                        ? t("Creating…")
+                                        : t("Create my Secret Santa")}{" "}
                                     <span aria-hidden="true">↗</span>
                                 </button>
                                 <p className="fine-print">
-                                    De 3 à 100 participants. Chacun offre et
-                                    reçoit un cadeau.
+                                    {t(
+                                        "From 3 to 100 participants. Everyone gives and receives a gift.",
+                                    )}
                                 </p>
                             </>
                         )}

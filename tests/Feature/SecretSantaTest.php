@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\SendAccessLink;
+use App\Models\Delivery;
 use App\Models\Exchange;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,29 +36,29 @@ class SecretSantaTest extends TestCase
         return collect(range(1, $count))->map(function ($n) use ($event) {
             $token = Str::random(64);
 
-            return $event->participants()->create(['name' => 'Personne '.$n, 'email' => "person{$n}@example.test", 'wishes' => 'Envie privée '.$n, 'access_token' => $token, 'access_hash' => hash('sha256', $token), 'confirmed_at' => now()]);
+            return $event->participants()->create(['name' => 'Person '.$n, 'email' => "person{$n}@example.test", 'wishes' => 'Private wish '.$n, 'access_token' => $token, 'access_hash' => hash('sha256', $token), 'confirmed_at' => now()]);
         });
     }
 
     private function manage(Exchange $event): static
     {
-        return $this->withSession(["managed.{$event->id}" => true]);
+        return $this->withSession(['organizer_email' => 'owner@example.test', "managed.{$event->id}" => 1]);
     }
 
     public function test_create_queues_access_and_grants_only_its_manager_session(): void
     {
-        $response = $this->post('/events', ['name' => 'Équipe', 'organizer_email' => 'Owner@example.test', 'gift_date' => now()->addMonth()->format('Y-m-d'), 'budget' => 20]);
+        $response = $this->withSession(['organizer_email' => 'owner@example.test'])->post('/events', ['name' => 'Équipe', 'organizer_email' => 'Owner@example.test', 'gift_date' => now()->addMonth()->format('Y-m-d'), 'budget' => 20]);
         $event = Exchange::firstOrFail();
         $response->assertRedirect(route('exchanges.manage', $event));
         $this->assertSame('owner@example.test', $event->organizer_email);
-        Queue::assertPushed(SendAccessLink::class, fn ($job) => $job->kind === 'organizer');
+        Queue::assertPushed(SendAccessLink::class, fn ($job) => Delivery::find($job->deliveryId)->kind === 'organizer');
         $this->get(route('exchanges.manage', $event))->assertOk();
         $this->get(route('exchanges.manage', $this->event()))->assertForbidden();
     }
 
     public function test_validation_rejects_invalid_event_inputs(): void
     {
-        $this->post('/events', ['name' => '', 'organizer_email' => 'bad', 'gift_date' => '2020-01-01', 'budget' => -1])->assertSessionHasErrors(['name', 'organizer_email', 'gift_date', 'budget']);
+        $this->withSession(['organizer_email' => 'owner@example.test'])->post('/events', ['name' => '', 'organizer_email' => 'bad', 'gift_date' => '2020-01-01', 'budget' => -1])->assertSessionHasErrors(['name', 'gift_date', 'budget']);
         $this->assertDatabaseCount('exchanges', 0);
     }
 
@@ -81,7 +82,7 @@ class SecretSantaTest extends TestCase
         $this->get(route('access.show', $person->access_token))->assertOk();
         $this->assertNull($person->fresh()->confirmed_at);
         $this->get(route('participants.show', $event))->assertForbidden();
-        $this->post(route('participants.store', $event), ['name' => 'Mallory', 'email' => 'alice@example.test', 'wishes' => 'Remplacé'])->assertRedirect();
+        $this->post(route('participants.store', $event), ['name' => 'Mallory', 'email' => 'alice@example.test', 'wishes' => 'Replaced'])->assertRedirect();
         $this->assertDatabaseCount('participants', 1);
         $this->assertSame('Alice', $person->fresh()->name);
         $this->post(route('access.activate', $person->access_token))->assertRedirect(route('participants.show', $event));
@@ -176,19 +177,21 @@ class SecretSantaTest extends TestCase
         Queue::swap($this->realQueue);
         config(['queue.default' => 'database']);
         $token = Str::random(64);
-        SendAccessLink::dispatch('person@example.test', 'Secret', route('access.show', $token), 'join');
+        $event = $this->event();
+        $person = $this->people($event)->first();
+        Delivery::enqueue($event, $person, 'join');
         $payload = DB::table('jobs')->value('payload');
         $this->assertIsString($payload);
-        $this->assertStringNotContainsString($token, $payload);
-        $this->assertStringNotContainsString('person@example.test', $payload);
+        $this->assertStringNotContainsString($person->access_token, $payload);
+        $this->assertStringNotContainsString($person->email, $payload);
     }
 
     public function test_creation_joins_and_confirmations_do_not_consume_the_draw_rate_limit(): void
     {
-        $this->post('/events', ['name' => 'Test complet', 'organizer_email' => 'owner@example.test', 'gift_date' => now()->addMonth()->format('Y-m-d'), 'budget' => 20])->assertRedirect();
+        $this->withSession(['organizer_email' => 'owner@example.test'])->post('/events', ['name' => 'Test complet', 'organizer_email' => 'owner@example.test', 'gift_date' => now()->addMonth()->format('Y-m-d'), 'budget' => 20])->assertRedirect();
         $event = Exchange::firstOrFail();
         foreach (range(1, 3) as $number) {
-            $this->post(route('participants.store', $event), ['name' => "Personne $number", 'email' => "p$number@example.test"])->assertRedirect();
+            $this->post(route('participants.store', $event), ['name' => "Person $number", 'email' => "p$number@example.test"])->assertRedirect();
             $person = $event->participants()->where('email', "p$number@example.test")->firstOrFail();
             $this->get(route('access.show', $person->access_token))->assertOk();
             $this->post(route('access.activate', $person->access_token))->assertRedirect();

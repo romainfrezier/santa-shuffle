@@ -1,3 +1,4 @@
+import { useTranslation } from "../i18n/useTranslation";
 import { Form } from "@inertiajs/react";
 import Layout from "../components/Layout";
 export default function Access({
@@ -9,28 +10,32 @@ export default function Access({
     action: string;
     organizer: boolean;
 }) {
+    const { t } = useTranslation();
+
     return (
-        <Layout title="Votre invitation privée">
+        <Layout title={t("Your private invitation")}>
             <section className="centered paper">
                 <h1>
                     {organizer
-                        ? "Bienvenue dans les coulisses."
-                        : "Une place vous attend."}
+                        ? t("Welcome behind the scenes.")
+                        : t("A place is waiting for you.")}
                 </h1>
                 <p>{eventName}</p>
                 <Form action={action} method="post">
                     {({ processing }) => (
                         <button className="button" disabled={processing}>
                             {processing
-                                ? "Ouverture…"
+                                ? t("Opening…")
                                 : organizer
-                                  ? "Gérer mon Secret Santa"
-                                  : "Ouvrir mon espace personnel"}
+                                  ? t("Manage my Secret Santa")
+                                  : t("Open my personal space")}
                         </button>
                     )}
                 </Form>
                 <p className="fine-print">
-                    Ce lien est privé. Gardez-le pour revenir quand vous voulez.
+                    {t(
+                        "This link is private. Keep it to come back whenever you like.",
+                    )}
                 </p>
             </section>
         </Layout>

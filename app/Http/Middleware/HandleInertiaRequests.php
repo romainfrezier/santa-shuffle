@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
+use App\Models\Exchange;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -21,6 +24,18 @@ class HandleInertiaRequests extends Middleware
      *
      * @see https://inertiajs.com/asset-versioning
      */
+    public function handle(Request $request, \Closure $next)
+    {
+        $response = parent::handle($request, $next);
+        // Referrer-Policy forbids Referer, and Laravel excludes AJAX GETs from
+        // previous URLs. Preserve the current Inertia page for validation redirects.
+        if ($request->isMethod('GET') && $request->header('X-Inertia') && $response->getStatusCode() === 200) {
+            $request->session()->setPreviousUrl('/'.ltrim($request->getRequestUri(), '/'));
+        }
+
+        return $response;
+    }
+
     public function version(Request $request): ?string
     {
         return parent::version($request);
@@ -37,6 +52,10 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'locale' => app()->getLocale(),
+            'currencies' => Exchange::CURRENCIES,
+            'hasAccess' => $request->session()->has('organizer_email') || count($request->session()->get('participants', [])) > 0,
+            'organizerEmail' => $request->session()->get('organizer_email'),
             'notice' => fn () => $request->session()->get('notice'),
             //
         ];

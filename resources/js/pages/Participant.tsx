@@ -1,6 +1,10 @@
+import { EventDetails } from "../components/EventDetails";
+import { useTranslation } from "../i18n/useTranslation";
+import type { Exchange } from "../types/exchange";
+import { useRevealCelebration } from "../hooks/useRevealCelebration";
 import { Form } from "@inertiajs/react";
 import Layout from "../components/Layout";
-import { Details, Field, TextArea, type Exchange } from "../components/Fields";
+import { Field, TextArea } from "../components/Fields";
 type Person = { name: string; wishes: string | null };
 export default function Participant({
     exchange,
@@ -11,35 +15,45 @@ export default function Participant({
     participant: Person;
     recipient: Person | null;
 }) {
+    const { t } = useTranslation();
+
+    const markOpened = useRevealCelebration(recipient);
     return (
-        <Layout title="Mon enveloppe">
+        <Layout title={t("My envelope")}>
             <section className="participant-page">
                 <h1>
                     {exchange.drawn
-                        ? `${participant.name}, un secret pour vous.`
-                        : `Vous êtes de la fête, ${participant.name}.`}
+                        ? t("{name}, a secret for you.", {
+                              name: participant.name,
+                          })
+                        : t("You’re part of the fun, {name}.", {
+                              name: participant.name,
+                          })}
                 </h1>
                 <p>{exchange.name}</p>
-                <Details exchange={exchange} />
+                <EventDetails exchange={exchange} />
                 {exchange.drawn ? (
                     recipient ? (
                         <div className="recipient paper" aria-live="polite">
-                            <p>Cette année, vous allez faire plaisir à</p>
+                            <p>{t("This year, you’ll be making a gift for")}</p>
                             <h2>{recipient.name}</h2>
                             <div className="wishes">
-                                <h3>Quelques pistes pour le cadeau</h3>
+                                <h3>{t("Some ideas for the gift")}</h3>
                                 <p>
                                     {recipient.wishes ||
-                                        "Pas d’envie particulière. À vous de trouver la petite attention qui fera sourire."}
+                                        t(
+                                            "No special wishes. Find a little something that will make them smile.",
+                                        )}
                                 </p>
                             </div>
                             <p className="fine-print">
-                                Gardez le secret jusqu’au jour des cadeaux.
+                                {t("Keep the secret until gift day.")}
                             </p>
                         </div>
                     ) : (
                         <Form
                             action={`/events/${exchange.uuid}/reveal`}
+                            onBefore={markOpened}
                             method="post"
                         >
                             {({ processing }) => (
@@ -56,11 +70,11 @@ export default function Participant({
                                     </span>
                                     <strong>
                                         {processing
-                                            ? "Votre enveloppe s’ouvre…"
-                                            : "Ouvrir mon enveloppe"}
+                                            ? t("Your envelope is opening…")
+                                            : t("Open my envelope")}
                                     </strong>
                                     <span>
-                                        Votre destinataire se cache ici.
+                                        {t("Your recipient is hiding here.")}
                                     </span>
                                 </button>
                             )}
@@ -68,10 +82,11 @@ export default function Participant({
                     )
                 ) : (
                     <div className="paper participant-wait">
-                        <h2>Le hasard se prépare.</h2>
+                        <h2>{t("Chance is getting ready.")}</h2>
                         <p>
-                            Votre participation est confirmée. Un e-mail vous
-                            préviendra quand votre enveloppe sera prête.
+                            {t(
+                                "Your participation is confirmed. An email will let you know when your envelope is ready.",
+                            )}
                         </p>
                         <Form
                             action={`/events/${exchange.uuid}/me`}
@@ -80,7 +95,7 @@ export default function Participant({
                             {({ errors, processing }) => (
                                 <>
                                     <Field
-                                        label="Votre prénom ou petit nom"
+                                        label={t("Your first name or nickname")}
                                         name="name"
                                         defaultValue={participant.name}
                                         maxLength={80}
@@ -88,7 +103,7 @@ export default function Participant({
                                         error={errors.name}
                                     />
                                     <TextArea
-                                        label="Vos envies de cadeaux (facultatif)"
+                                        label={t("Your gift wishes (optional)")}
                                         name="wishes"
                                         defaultValue={participant.wishes ?? ""}
                                         maxLength={1000}
@@ -99,8 +114,8 @@ export default function Participant({
                                         disabled={processing}
                                     >
                                         {processing
-                                            ? "Enregistrement…"
-                                            : "Enregistrer mes envies"}
+                                            ? t("Saving…")
+                                            : t("Save my wishes")}
                                     </button>
                                 </>
                             )}

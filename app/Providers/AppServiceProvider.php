@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Models\Exchange;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -23,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('login-send', fn (Request $request) => [Limit::perHour(10)->by('login-ip:'.$request->ip()), Limit::perHour(5)->by('login-email:'.hash('sha256', strtolower(is_string($request->input('email')) ? trim($request->input('email')) : '')))]);
+        RateLimiter::for('login-verify', fn (Request $request) => Limit::perMinute(20)->by('login-verify:'.$request->ip()));
+        RateLimiter::for('manage-event', fn (Request $request) => [Limit::perMinute(30)->by('manage-ip:'.$request->ip()), Limit::perHour(200)->by('manage-event:'.($request->route('exchange') instanceof Exchange ? $request->route('exchange')->uuid : $request->route('exchange')).':'.$request->session()->getId())]);
         RateLimiter::for('create-exchange', fn (Request $request) => Limit::perHour(5)->by('create:'.$request->ip()));
         RateLimiter::for('access-link', fn (Request $request) => Limit::perMinute(60)->by('access:'.$request->ip()));
         RateLimiter::for('join-exchange', fn (Request $request) => Limit::perMinute(60)->by('join:'.$request->ip()));

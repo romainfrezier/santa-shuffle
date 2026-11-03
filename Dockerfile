@@ -1,9 +1,15 @@
-FROM node:24-bookworm-slim AS frontend
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY vite.config.js tsconfig.json ./
 COPY resources ./resources
+COPY playwright.config.ts ./
+COPY tests/browser ./tests/browser
+COPY vitest.config.ts ./
+COPY tests/frontend ./tests/frontend
+COPY scripts ./scripts
+COPY docs/licenses ./docs/licenses
 RUN npm run typecheck && npm run build
 
 FROM dunglas/frankenphp:1-php8.5-trixie AS php-base
@@ -18,6 +24,9 @@ COPY . .
 RUN composer dump-autoload --no-dev --classmap-authoritative
 
 FROM php-base AS runtime
+LABEL org.opencontainers.image.title="Santa Shuffle" \
+      org.opencontainers.image.description="A self-hosted, multilingual Secret Santa for your team" \
+      org.opencontainers.image.licenses="MIT"
 ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr SERVER_NAME=:8080
 COPY --from=vendor --chown=www-data:www-data /app /app
 COPY --from=frontend --chown=www-data:www-data /app/public/build /app/public/build

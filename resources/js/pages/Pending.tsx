@@ -1,31 +1,37 @@
+import { useTranslation } from "../i18n/useTranslation";
 import { Link } from "@inertiajs/react";
 import Layout, { Mark } from "../components/Layout";
-import type { Exchange } from "../components/Fields";
+import type { Exchange } from "../types/exchange";
 export default function Pending({ exchange }: { exchange: Exchange }) {
+    const { t } = useTranslation();
+
     return (
-        <Layout title="Regardez votre boîte mail">
+        <Layout title={t("Check your inbox")}>
             <section className="centered paper">
                 <span className="mail-symbol" aria-hidden="true">
                     <Mark />
                 </span>
                 <h1>
-                    Une invitation
+                    {t("An invitation")}
                     <br />
-                    dans votre boîte mail.
+                    {t("in your inbox.")}
                 </h1>
                 <p>
-                    Si votre adresse est valide, vous allez recevoir votre lien
-                    personnel pour <strong>{exchange.name}</strong>.
+                    {t(
+                        "If your address is valid, you’ll receive your personal link for {name}.",
+                        { name: exchange.name },
+                    )}
                 </p>
                 <p>
-                    Ouvrez-le puis confirmez votre participation. Pensez à
-                    vérifier les courriers indésirables.
+                    {t(
+                        "Open it and confirm your participation. Remember to check your spam folder.",
+                    )}
                 </p>
                 <Link
                     className="button secondary"
                     href={`/events/${exchange.uuid}`}
                 >
-                    Revenir à l’invitation
+                    {t("Back to the invitation")}
                 </Link>
             </section>
         </Layout>

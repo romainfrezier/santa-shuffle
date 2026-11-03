@@ -1,6 +1,9 @@
+import { EventDetails } from "../components/EventDetails";
+import { useTranslation } from "../i18n/useTranslation";
+import type { Exchange } from "../types/exchange";
 import { Form, Link } from "@inertiajs/react";
 import Layout from "../components/Layout";
-import { Details, Field, TextArea, type Exchange } from "../components/Fields";
+import { Field, TextArea } from "../components/Fields";
 export default function Join({
     exchange,
     count,
@@ -8,38 +11,44 @@ export default function Join({
     exchange: Exchange;
     count: number;
 }) {
+    const { t } = useTranslation();
+
     return (
         <Layout title={exchange.name}>
             <div className="form-layout">
                 <aside>
                     <h1>{exchange.name}</h1>
-                    <Details exchange={exchange} />
+                    <EventDetails exchange={exchange} />
                     <p>
                         {exchange.message ||
-                            "Une équipe, des cadeaux et un secret à garder. Il ne manque plus que vous."}
+                            t(
+                                "A team, some gifts, and a secret to keep. All that’s missing is you.",
+                            )}
                     </p>
                     <p className="muted">
-                        {count}{" "}
-                        {count > 1
-                            ? "participations confirmées"
-                            : "participation confirmée"}
+                        {t(
+                            count === 1
+                                ? "{count} confirmed participant"
+                                : "{count} confirmed participants",
+                            { count },
+                        )}
                     </p>
                 </aside>
                 <section className="paper">
                     <h2>
                         {exchange.drawn
-                            ? "Les enveloppes sont parties."
-                            : "Vous êtes de la fête ?"}
+                            ? t("The envelopes are on their way.")
+                            : t("Are you joining the fun?")}
                     </h2>
                     {exchange.drawn ? (
                         <>
                             <p>
-                                Le tirage a eu lieu. Ouvrez le lien personnel
-                                reçu par e-mail pour découvrir votre
-                                destinataire.
+                                {t(
+                                    "The draw is complete. Open the personal link in your email to discover your recipient.",
+                                )}
                             </p>
                             <Link href="/" className="button">
-                                Retour à l’accueil
+                                {t("Back to home")}
                             </Link>
                         </>
                     ) : (
@@ -50,7 +59,7 @@ export default function Join({
                             {({ errors, processing }) => (
                                 <>
                                     <Field
-                                        label="Votre prénom ou petit nom"
+                                        label={t("Your first name or nickname")}
                                         name="name"
                                         maxLength={80}
                                         autoComplete="given-name"
@@ -58,7 +67,7 @@ export default function Join({
                                         error={errors.name}
                                     />
                                     <Field
-                                        label="Votre adresse e-mail"
+                                        label={t("Your email address")}
                                         name="email"
                                         type="email"
                                         maxLength={254}
@@ -67,10 +76,12 @@ export default function Join({
                                         error={errors.email}
                                     />
                                     <TextArea
-                                        label="Quelques idées pour vous faire plaisir (facultatif)"
+                                        label={t("A few gift ideas (optional)")}
                                         name="wishes"
                                         maxLength={1000}
-                                        placeholder="Du chocolat noir, un livre, quelque chose fait main…"
+                                        placeholder={t(
+                                            "Dark chocolate, a book, something handmade…",
+                                        )}
                                         error={errors.wishes}
                                     />
                                     <button
@@ -78,18 +89,18 @@ export default function Join({
                                         disabled={processing}
                                     >
                                         {processing
-                                            ? "Envoi en cours…"
-                                            : "Recevoir mon invitation"}
+                                            ? t("Sending…")
+                                            : t("Send me my invitation")}
                                     </button>
                                     <p className="fine-print">
-                                        Confirmez votre e-mail pour participer.
-                                        Vos envies seront visibles uniquement
-                                        par la personne qui vous offre un
-                                        cadeau.
+                                        {t(
+                                            "Confirm your email to take part. Only the person giving you a gift will see your wishes.",
+                                        )}
                                     </p>
                                     <p className="fine-print">
-                                        Déjà inscrit ? Utilisez la même adresse
-                                        pour recevoir à nouveau votre lien.
+                                        {t(
+                                            "Already registered? Use the same address to receive your link again.",
+                                        )}
                                     </p>
                                 </>
                             )}
