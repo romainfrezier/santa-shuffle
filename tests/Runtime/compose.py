@@ -58,7 +58,9 @@ with tempfile.TemporaryDirectory(prefix="santa-compose-") as directory:
         if mode == "pgsql":
             run("up", "-d", "--wait", "postgres")
         run("run", "--rm", "--no-deps", "app", "php", "artisan", "migrate", "--force")
-        run("up", "-d", "--wait", "--wait-timeout", "60")
+        run("up", "-d", "--wait", "--wait-timeout", "60", "app")
+        # Older Compose versions reject --wait for an explicitly disabled healthcheck.
+        run("up", "-d", "worker", "scheduler")
         port = run("port", "app", "8080").decode().strip()
         with urllib.request.urlopen("http://" + port + "/up") as response:
             assert response.status == 200
@@ -78,6 +80,8 @@ with tempfile.TemporaryDirectory(prefix="santa-compose-") as directory:
         else:
             raise AssertionError("Anonymous event creation must redirect to login")
         ids = json.loads(run("exec", "-T", "app", "php", "-r", seed))
+        running = set(run("ps", "--status", "running", "--services").decode().splitlines())
+        assert {"app", "worker", "scheduler"} <= running, running
         run("stop", "app", "worker", "scheduler")
         if mode == "sqlite":
             run("cp", "app:/app/storage/database/database.sqlite", str(temp / "backup.sqlite"))
