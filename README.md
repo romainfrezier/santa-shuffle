@@ -22,7 +22,7 @@ Each event has participant invitations, confirmation status, exclusions, notific
 
 Canonical repository: [romainfrezier/santa-shuffle](https://github.com/romainfrezier/santa-shuffle). Its visibility and release state are managed separately from this source tree.
 
-Requirements: PHP 8.4+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 24 and npm. The Composer lockfile was resolved and tested with PHP 8.5.
+Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm. The Composer lockfile was resolved and tested with PHP 8.5.
 
 ```sh
 cp .env.example .env
@@ -70,6 +70,8 @@ The override configures all three services for PostgreSQL 18 and adds a persiste
 
 ## Checks
 
+See the [v0.1.0 dependency audit](docs/dependency-audit-0.1.0.md) for the stable versions and upstream-controlled transitive constraints checked before the first release.
+
 ```sh
 composer validate --strict
 php artisan test
@@ -90,7 +92,7 @@ Use disposable databases only. CI runs PHP and concurrency tests on SQLite and P
 
 - **Health:** `docker compose --env-file .env.docker ps`; `/up` verifies Laravel startup, not SMTP delivery.
 - **Email failures:** inspect `php artisan queue:failed` in the worker, then retry with `queue:retry all` after fixing SMTP. Automatic retries are bounded. An ambiguous SMTP acceptance can produce a duplicate with the same participant link. Organizer codes are sent synchronously and are single-use.
-- **Upgrades:** back up first, stop app/worker/scheduler, build or pull the image, migrate explicitly, then restart all three services. Record the deployed image digest. Base image tags track their stable branches; lockfiles alone do not freeze the OS image.
+- **Upgrades:** back up first, stop app/worker/scheduler, build or pull the image, migrate explicitly, then restart all three services. Record the deployed image digest. Base images are pinned by version and digest; Dependabot proposes reviewed updates.
 - **Backups:** stop all three writers before copying SQLite storage. Keep `APP_KEY` and private configuration alongside a protected backup. For PostgreSQL use `pg_dump`, and test restoration in isolation. Never run `down -v` on an installation whose data you need.
 - **Retention:** event access expires 30 days after the gift date. The scheduler removes expired events and related data daily at 03:00 UTC. Pending expired login codes are purged hourly. Logs and backups need their own retention policy.
 
