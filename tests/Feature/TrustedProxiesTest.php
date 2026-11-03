@@ -24,12 +24,11 @@ class TrustedProxiesTest extends TestCase
         try {
             parent::tearDown();
         } finally {
-            foreach ($this->previousEnvironment as $name => $value) {
-                if ($value === null) {
-                    Env::getRepository()->clear($name);
-                } else {
-                    Env::getRepository()->set($name, $value);
-                }
+            foreach ($this->previousEnvironment as $name => $state) {
+                putenv($state['process'] === false ? $name : $name.'='.$state['process']);
+                unset($_ENV[$name], $_SERVER[$name]);
+                $_ENV = $state['env'] + $_ENV;
+                $_SERVER = $state['server'] + $_SERVER;
             }
         }
     }
@@ -138,8 +137,16 @@ class TrustedProxiesTest extends TestCase
     private function setEnvironment(string $name, string $value): void
     {
         if (! array_key_exists($name, $this->previousEnvironment)) {
-            $this->previousEnvironment[$name] = Env::getRepository()->get($name);
+            $this->previousEnvironment[$name] = [
+                'process' => getenv($name),
+                'env' => array_intersect_key($_ENV, [$name => true]),
+                'server' => array_intersect_key($_SERVER, [$name => true]),
+            ];
         }
-        Env::getRepository()->set($name, $value);
+        // Drop Dotenv ownership so later boots cannot reload .env over this override.
+        Env::getRepository()->clear($name);
+        // Set every adapter directly, including values inherited from CI.
+        putenv($name.'='.$value);
+        $_ENV[$name] = $_SERVER[$name] = $value;
     }
 }
