@@ -37,7 +37,7 @@ composer run dev
 
 Open http://localhost:8000. The development command starts the server, Vite and a queue worker. `MAIL_MAILER=log` writes emails, including private links and login codes, to `storage/logs/laravel.log`: use this **only in development**. With Docker's stderr logging, inspect local app logs privately instead. Never share those logs.
 
-For real email delivery, configure `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` and `MAIL_FROM_ADDRESS`. Use empty credentials for a local SMTP service without authentication. Configure real SMTP and HTTPS before inviting real participants.
+For real email delivery, configure `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` and `MAIL_FROM_ADDRESS`. On a VPS, `APP_KEY_FILE` and `MAIL_PASSWORD_FILE` may instead point to readable Docker secret files; file values take precedence, and missing or empty files stop startup. Use empty credentials for a local SMTP service without authentication. Configure real SMTP and HTTPS before inviting real participants.
 
 ## Docker with SQLite
 
