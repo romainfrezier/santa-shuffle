@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:26.13.0-trixie-slim@sha256:e4db4c914bf8ad241bd24804fc25d272d89bad97e68cdc8a1414862790a02c39 AS frontend
+FROM --platform=$BUILDPLATFORM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install --global "$(node -p 'require("./package.json").packageManager')" && npm ci
@@ -12,7 +12,7 @@ COPY scripts ./scripts
 COPY docs/licenses ./docs/licenses
 RUN npm run typecheck && npm run build
 
-FROM dunglas/frankenphp:1.13.4-php8.5-trixie@sha256:6f86f003f1478bafa7befe6ec26db5575e703882171f785189de1e222df0e38e AS php-base
+FROM dunglas/frankenphp:1.13.5-php8.5-trixie@sha256:667c5fffd348d9c3c260803d75956f1d9aace7e4b7331d8893de6f101d7e0e57 AS php-base
 RUN install-php-extensions pdo_pgsql pdo_sqlite intl zip pcntl
 COPY --from=composer:2.11.1@sha256:5190d9b445add2fa26090108273cb1ef1e1af98175201c737b85b3c4f90fbf7c /usr/bin/composer /usr/bin/composer
 WORKDIR /app
