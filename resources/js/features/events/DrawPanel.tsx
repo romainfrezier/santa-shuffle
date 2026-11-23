@@ -117,7 +117,7 @@ export default function DrawPanel({
                                     confirmed !== participants.length && (
                                         <p className="fine-print">
                                             {t(
-                                                "Wait for confirmations or remove pending registrations.",
+                                                "Open a pending registration to confirm it with the participant’s email address.",
                                             )}
                                         </p>
                                     )

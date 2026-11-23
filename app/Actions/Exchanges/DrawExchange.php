@@ -27,6 +27,9 @@ final readonly class DrawExchange
             if ($people->contains(fn ($p) => ! $p->confirmed_at)) {
                 throw ValidationException::withMessages(['draw' => __('messages.confirmation_required')]);
             }
+            if ($people->count() !== $people->map(fn ($person) => mb_strtolower(trim($person->name)))->unique()->count()) {
+                throw ValidationException::withMessages(['draw' => __('messages.distinct_names_required')]);
+            }
             $excluded = DB::table('exclusions')->where('exchange_id', $exchange->id)->get()->groupBy('giver_id')->map(fn ($rows) => $rows->pluck('recipient_id')->map(fn ($id) => (int) $id)->all())->all();
             $pairs = $this->draw->assign($people->modelKeys(), $excluded);
             $locked->update(['draw_version' => $locked->draw_version + 1, 'drawn_at' => now()]);

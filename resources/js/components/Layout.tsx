@@ -52,7 +52,7 @@ export default function Layout({
                     <Link href={organizerEmail ? "/my-events" : "/login"}>
                         {organizerEmail ? t("My events") : t("Log in")}
                     </Link>
-                    {home ? (
+                    {home && !hasAccess ? (
                         <Link className="nav-button" href="/create">
                             {t("Organize a Secret Santa")}{" "}
                             <span aria-hidden="true">↗</span>

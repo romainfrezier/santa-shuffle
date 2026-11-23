@@ -28,12 +28,13 @@ final class ExchangeView
 
     public static function management(Exchange $exchange): array
     {
+        $people = $exchange->participants()->orderBy('id')->get(['id', 'name', 'confirmed_at', 'revealed_at']);
         $deliveries = Delivery::where('exchange_id', $exchange->id)->orderBy('id')->get()->keyBy('participant_id');
 
         return [
             'exchange' => self::summary($exchange),
             'inviteUrl' => route('exchanges.show', $exchange),
-            'participants' => $exchange->participants()->orderBy('id')->get()->map(fn (Participant $person) => [
+            'participants' => $people->map(fn (Participant $person) => [
                 'id' => $person->id,
                 'name' => $person->name,
                 'confirmed' => $person->confirmed_at !== null,
@@ -46,10 +47,12 @@ final class ExchangeView
 
     public static function participant(Exchange $exchange, Participant $person): array
     {
+        $recipient = $person->revealed_at ? $person->recipient : null;
+
         return [
             'exchange' => self::summary($exchange),
             'participant' => $person->only('name', 'wishes'),
-            'recipient' => $person->revealed_at ? $person->recipient?->only('name', 'wishes') : null,
+            'recipient' => $recipient ? ['name' => $recipient->name, 'wishes' => $recipient->wishes] : null,
         ];
     }
 }

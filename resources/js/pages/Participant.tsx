@@ -85,7 +85,7 @@ export default function Participant({
                         <h2>{t("Chance is getting ready.")}</h2>
                         <p>
                             {t(
-                                "Your participation is confirmed. An email will let you know when your envelope is ready.",
+                                "You’re on the list. When the organizer draws the names, return here to open your envelope. We’ll also let you know by email.",
                             )}
                         </p>
                         <Form
@@ -95,7 +95,9 @@ export default function Participant({
                             {({ errors, processing }) => (
                                 <>
                                     <Field
-                                        label={t("Your first name or nickname")}
+                                        label={t(
+                                            "Name your group will recognize (e.g. Alex M.)",
+                                        )}
                                         name="name"
                                         defaultValue={participant.name}
                                         maxLength={80}
@@ -122,6 +124,12 @@ export default function Participant({
                         </Form>
                     </div>
                 )}
+                <a
+                    className="inline-link"
+                    href={`/events/${exchange.uuid}/me/invitation`}
+                >
+                    {t("Save my private invitation")}
+                </a>
             </section>
         </Layout>
     );

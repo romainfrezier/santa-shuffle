@@ -9,7 +9,12 @@ import {
     Sparkles,
 } from "lucide-react";
 import Layout from "../components/Layout";
-export default function Home() {
+import type { Exchange } from "../types/exchange";
+export default function Home({
+    envelopes,
+}: {
+    envelopes: Pick<Exchange, "uuid" | "name">[];
+}) {
     const { t } = useTranslation();
 
     const { scene, shuffle, name } = useShuffleDemo();
@@ -31,13 +36,41 @@ export default function Home() {
                         <br />
                         {t("We shuffle the names. You make someone happy.")}
                     </p>
-                    <Link className="button" href="/create">
-                        {t("Create my Secret Santa")}{" "}
-                        <ArrowUpRight size={20} aria-hidden="true" />
-                    </Link>
-                    <span className="hero-note">
-                        {t("A name, a date, a budget. Let the magic begin.")}
-                    </span>
+                    {envelopes.length ? (
+                        <ul className="saved-envelopes">
+                            {envelopes.map((event) => (
+                                <li key={event.uuid}>
+                                    <Link
+                                        className="button"
+                                        href={`/events/${event.uuid}/me`}
+                                    >
+                                        {t("My envelope for {name}", {
+                                            name: event.name,
+                                        })}
+                                        <ArrowUpRight
+                                            size={20}
+                                            aria-hidden="true"
+                                        />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <>
+                            <Link className="button" href="/create">
+                                {t("Create my Secret Santa")}{" "}
+                                <ArrowUpRight size={20} aria-hidden="true" />
+                            </Link>
+                            <details className="invitation-help">
+                                <summary>{t("Already taking part?")}</summary>
+                                <p>
+                                    {t(
+                                        "Your envelope appears here while you’re signed in on this browser. Otherwise, open your saved private link or the one in your invitation email.",
+                                    )}
+                                </p>
+                            </details>
+                        </>
+                    )}
                 </div>
                 <div className="shuffle-scene" ref={scene}>
                     <span className="scene-caption">
@@ -102,14 +135,10 @@ export default function Home() {
             </div>
             <section className="how" id="how">
                 <div>
-                    <h2>
-                        {t("You bring the team.")}
-                        <br />
-                        {t("We shuffle the names.")}
-                    </h2>
+                    <h2>{t("How it works")}</h2>
                     <p>
                         {t(
-                            "The hardest part? Keeping the secret until the big day.",
+                            "Everyone gives one gift and receives one. Only the giver sees who their gift is for.",
                         )}
                     </p>
                 </div>
@@ -117,10 +146,10 @@ export default function Home() {
                     <li>
                         <span className="step-number">1</span>
                         <div>
-                            <h3>{t("Set the scene")}</h3>
+                            <h3>{t("Create the event")}</h3>
                             <p>
                                 {t(
-                                    "A name, a date, a budget. Your event is ready.",
+                                    "Sign in with an email code, then set the gift date and budget. To take part yourself, join through the group invitation too.",
                                 )}
                             </p>
                         </div>
@@ -131,7 +160,7 @@ export default function Home() {
                             <h3>{t("Pass the invitation around")}</h3>
                             <p>
                                 {t(
-                                    "One link for everyone. Each person confirms and shares their wishes.",
+                                    "Share the group link. Each guest enters a name and email, then opens their private invitation to confirm. Gift wishes are optional.",
                                 )}
                             </p>
                         </div>
@@ -139,10 +168,10 @@ export default function Home() {
                     <li>
                         <span className="step-number">3</span>
                         <div>
-                            <h3>{t("Let chance decide")}</h3>
+                            <h3>{t("Draw and open the envelopes")}</h3>
                             <p>
                                 {t(
-                                    "Start the draw. Everyone opens their private envelope and discovers who to surprise.",
+                                    "Once everyone has confirmed and at least three people are taking part, the organizer starts the draw. Each person opens their own envelope to find out who to surprise.",
                                 )}
                             </p>
                         </div>

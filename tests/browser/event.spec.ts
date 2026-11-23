@@ -281,3 +281,69 @@ test("email login protects legacy links and lists multiple owned events", async 
         fullPage: true,
     });
 });
+
+test("manage a pending participant on mobile and desktop", async ({ page }) => {
+    const event = fixture("seed");
+    await manage(page, event);
+    await page
+        .getByText("Inviter une personne par e-mail", { exact: true })
+        .click();
+    await page.getByLabel("Prénom de la personne").fill("Camille");
+    await page.getByLabel("Son adresse e-mail").fill("camille@example.test");
+    await page.getByRole("button", { name: "Envoyer l’invitation" }).click();
+
+    const row = page.locator(".people li").filter({
+        has: page.locator(".person-name").filter({ hasText: "Camille" }),
+    });
+    const toast = page.getByRole("button", { name: "Fermer la notification" });
+    await toast.click();
+    await expect(toast).toBeHidden();
+    const toggle = row.locator("summary");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    const email = row.getByLabel("Adresse e-mail à confirmer");
+    await email.fill("camille@example.test");
+    for (const width of [1280, 768, 390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const button of await row.getByRole("button").all()) {
+            const box = await button.boundingBox();
+            expect(box).toBeTruthy();
+            expect(box!.x).toBeGreaterThanOrEqual(0);
+            expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+        }
+        if (width === 390 || width === 1280) {
+            await row.screenshot({
+                path: `artifacts/participant-actions-${width}.png`,
+            });
+        }
+    }
+    await email.fill("wrong@example.test");
+    await row
+        .getByRole("button", { name: "Confirmer la participation" })
+        .click();
+    await expect(row.getByRole("alert")).toHaveText(
+        "Cette adresse ne correspond pas à l’inscription sélectionnée.",
+    );
+    await email.fill("camille@example.test");
+    await row
+        .getByRole("button", { name: "Confirmer la participation" })
+        .click();
+    await expect(row.getByText("Confirmé", { exact: true })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Lancer le tirage", exact: true }),
+    ).toBeEnabled();
+    await row
+        .getByLabel("Nom reconnaissable par le groupe (par ex. Alex M.)")
+        .fill("Camille Martin");
+    await row
+        .getByLabel("Adresse e-mail pour modifier le nom")
+        .fill("camille@example.test");
+    await row
+        .getByRole("button", { name: "Enregistrer le nom", exact: true })
+        .click();
+    await expect(row.locator(".person-name")).toHaveText("Camille Martin");
+    page.on("dialog", (dialog) => dialog.accept());
+    await row.getByRole("button", { name: "Retirer Camille Martin" }).click();
+    await expect(row).toHaveCount(0);
+});

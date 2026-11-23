@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\Exchanges\CancelExchange;
+use App\Actions\Exchanges\ConfirmParticipant;
 use App\Actions\Exchanges\DeleteExchange;
 use App\Actions\Exchanges\ReopenExchange;
 use App\Actions\Exchanges\ResendInvitation;
@@ -18,6 +19,7 @@ use App\Models\Exchange;
 use App\Services\SessionAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class EventManagementController extends Controller
@@ -57,6 +59,34 @@ class EventManagementController extends Controller
         Inertia::clearHistory();
 
         return to_route('home')->with('notice', __('messages.event_deleted'));
+    }
+
+    public function confirm(Request $request, Exchange $exchange, int $participant, ConfirmParticipant $action): RedirectResponse
+    {
+        $access = new SessionAccess($request->session());
+        $access->authorizeManager($exchange);
+        $data = $request->validate(['email' => ['required', 'email', 'max:254']]);
+        $action->execute($exchange, $access, $participant, $data['email']);
+
+        return to_route('exchanges.manage', $exchange)->with('notice', __('messages.participant_confirmed'));
+    }
+
+    public function rename(Request $request, Exchange $exchange, int $participant): RedirectResponse
+    {
+        $access = new SessionAccess($request->session());
+        $access->authorizeManager($exchange);
+        $data = $request->validate(['name' => ['required', 'string', 'max:80'], 'email' => ['required', 'email', 'max:254']]);
+        $exchange->locked(function (Exchange $locked) use ($access, $participant, $data) {
+            $access->authorizeManager($locked);
+            abort_if($locked->drawn_at !== null, 409);
+            $person = $locked->participants()->findOrFail($participant);
+            if (mb_strtolower($data['email']) !== $person->email) {
+                throw ValidationException::withMessages(['email' => __('messages.confirm_email_mismatch')]);
+            }
+            $person->update(['name' => $data['name']]);
+        });
+
+        return to_route('exchanges.manage', $exchange);
     }
 
     public function resend(Request $request, Exchange $exchange, int $participant, ResendInvitation $action): RedirectResponse

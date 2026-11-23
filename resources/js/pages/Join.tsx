@@ -44,7 +44,7 @@ export default function Join({
                         <>
                             <p>
                                 {t(
-                                    "The draw is complete. Open the personal link in your email to discover your recipient.",
+                                    "The draw is complete. To see who you’re giving to, open your saved private link or the one in your invitation email.",
                                 )}
                             </p>
                             <Link href="/" className="button">
@@ -59,7 +59,9 @@ export default function Join({
                             {({ errors, processing }) => (
                                 <>
                                     <Field
-                                        label={t("Your first name or nickname")}
+                                        label={t(
+                                            "Name your group will recognize (e.g. Alex M.)",
+                                        )}
                                         name="name"
                                         maxLength={80}
                                         autoComplete="given-name"

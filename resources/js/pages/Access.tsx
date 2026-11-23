@@ -1,6 +1,7 @@
 import { useTranslation } from "../i18n/useTranslation";
 import { Form } from "@inertiajs/react";
 import Layout from "../components/Layout";
+import { useClipboard } from "../hooks/useClipboard";
 export default function Access({
     eventName,
     action,
@@ -11,6 +12,7 @@ export default function Access({
     organizer: boolean;
 }) {
     const { t } = useTranslation();
+    const { copy, copied, copyError } = useClipboard(action);
 
     return (
         <Layout title={t("Your private invitation")}>
@@ -34,9 +36,22 @@ export default function Access({
                 </Form>
                 <p className="fine-print">
                     {t(
-                        "This link is private. Keep it to come back whenever you like.",
+                        "Bookmark this page on a personal device or keep a copy of its address. Anyone with this private link can open your envelope.",
                     )}
                 </p>
+                <button
+                    className="button secondary"
+                    type="button"
+                    onClick={copy}
+                    aria-live="polite"
+                >
+                    {copied ? t("Copied!") : t("Copy my private link")}
+                </button>
+                {copyError && (
+                    <p role="status">
+                        {t("Copy the address from your browser’s address bar.")}
+                    </p>
+                )}
             </section>
         </Layout>
     );

@@ -4,7 +4,7 @@ Organizer authentication now uses a single-use email code. The original organize
 
 ## Event lifecycle and privacy
 
-Each event belongs to its verified organizer email. Direct invitations still require the recipient's explicit confirmation. Duplicate email registration never replaces an existing name or wishes. The maximum is 100 participants; a draw requires at least 3 confirmed participants and no unconfirmed participants.
+Each event belongs to its verified organizer email. A participant confirms by activating their private invitation. Before the draw, the organizer can also confirm a pending registration by entering its matching address. This marks the participant as ready for the draw and grants no access to their envelope. Duplicate email registration never replaces an existing name or wishes. The organizer can correct a participant name before drawing by supplying the matching email. Names must be distinguishable (case-insensitive, ignoring surrounding spaces) when drawing; use a recognizable surname or nickname. Existing draws keep their assignments and names. The maximum is 100 participants; a draw requires at least 3 confirmed participants and no unconfirmed participants.
 
 Reopening is available only before any envelope has been revealed. It clears all assignments, increments the draw version and notifies the group. Exclusions and confirmations remain. After adding and confirming participants, the organizer explicitly draws again. Pending old result notifications become obsolete; an already received link opens the current state, never an old assignment.
 
@@ -54,7 +54,33 @@ Restore a matching old image and backup together when needed; do not downgrade t
 
 The scheduler service runs `schedule:work`. Without Docker, configure Laravel's scheduler with `php artisan schedule:run` every minute. `php artisan events:purge` immediately removes expired events.
 
-For SQLite, stop app, worker and scheduler before copying storage. Keep APP_KEY separately and privately. Restored files and their parent directory must be writable by www-data (UID 33 in the image). `docker cp` can change ownership; restore ownership before starting services.
+Before upgrading SQLite, check the effective database path and the live container mounts. For the shipped Compose setup:
+
+```sh
+docker compose --env-file .env.docker exec -T app printenv DB_DATABASE
+docker inspect --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}' \
+  $(docker compose --env-file .env.docker ps -q app worker scheduler)
+```
+
+All three processes should see the same mount covering the configured database file. Keep its source and the original APP_KEY when recreating containers. A change of Compose project name can select a fresh named volume.
+
+For a full storage copy, stop app, worker and scheduler first. For a database-only checkpoint while events are running, use the [SQLite online backup API](https://www.sqlite.org/backup.html) through the SQLite CLI. On the database host, set `db_file` to the verified absolute source file and `backup_root` to a protected directory outside the live storage. Run as a user with access to both:
+
+```sh
+(
+  set -eu
+  umask 077
+  checkpoint=$(mktemp -d "${backup_root:?}/santa-XXXXXXXX")
+  cd "$checkpoint"
+  sqlite3 -readonly "${db_file:?}" '.backup database.sqlite'
+  test "$(sqlite3 -readonly database.sqlite 'PRAGMA integrity_check')" = ok
+  test -z "$(sqlite3 -readonly database.sqlite 'PRAGMA foreign_key_check')"
+  sqlite3 -readonly database.sqlite 'SELECT (SELECT count(*) FROM exchanges), (SELECT count(*) FROM participants);'
+  printf '%s\n' "$checkpoint"
+)
+```
+
+Preserve the corresponding APP_KEY privately and verify that an isolated restore decrypts participant tokens with that key. Disable outbound mail and workers during restore checks. Store encrypted backups off-host for disk-loss recovery. Restored files and their parent directory must be writable by www-data (UID 33 in the image). `docker cp` can change ownership; restore ownership before starting services.
 
 For PostgreSQL, use `pg_dump -Fc` and restore into an isolated database with `pg_restore --exit-on-error`. Check both data and token decryption using the original APP_KEY. Back up private configuration as well. App-level purge does not alter backups or delivered email; apply separate retention to backups and logs. Do not use `MAIL_MAILER=log` or log `/access/*` reverse-proxy URLs in production.
 
