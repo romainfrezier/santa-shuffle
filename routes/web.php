@@ -7,13 +7,14 @@ use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Middleware\SetLocale;
 use App\Models\Exchange;
+use App\Services\SessionAccess;
 use App\ViewModels\ExchangeView;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
-Route::get('/', fn () => Inertia::render('Home'))->name('home');
+Route::get('/', fn (SessionAccess $access) => Inertia::render('Home', ['envelopes' => $access->envelopes()]))->name('home');
 Route::get('/login', [OrganizerController::class, 'login'])->name('login');
 Route::post('/login/code', [OrganizerController::class, 'send'])->middleware('throttle:login-send');
 Route::post('/login/verify', [OrganizerController::class, 'verify'])->middleware('throttle:login-verify');
@@ -31,6 +32,8 @@ Route::prefix('/events/{exchange}')->whereUuid('exchange')->group(function () {
         Route::post('/reopen', [EventManagementController::class, 'reopen'])->name('exchanges.reopen');
         Route::post('/cancel', [EventManagementController::class, 'cancel'])->name('exchanges.cancel');
         Route::post('/rotate', [EventManagementController::class, 'rotate'])->name('exchanges.rotate');
+        Route::patch('/participants/{participant}/name', [EventManagementController::class, 'rename'])->whereNumber('participant')->name('participants.rename');
+        Route::post('/participants/{participant}/confirm', [EventManagementController::class, 'confirm'])->whereNumber('participant')->name('participants.confirm');
         Route::post('/participants/{participant}/resend', [EventManagementController::class, 'resend'])->name('participants.resend');
         Route::post('/participants/{participant}/rotate', [EventManagementController::class, 'rotate'])->name('participants.rotate');
     });
@@ -47,6 +50,7 @@ Route::prefix('/events/{exchange}')->whereUuid('exchange')->group(function () {
     Route::delete('/participants/{participant}', [ExchangeController::class, 'removeParticipant'])->name('participants.destroy');
     Route::post('/draw', [ExchangeController::class, 'draw'])->middleware('throttle:draw-exchange')->name('exchanges.draw');
     Route::get('/me', [ParticipantController::class, 'show'])->name('participants.show');
+    Route::get('/me/invitation', [ParticipantController::class, 'invitation'])->name('participants.invitation');
     Route::patch('/me', [ParticipantController::class, 'update'])->name('participants.update');
     Route::post('/reveal', [ParticipantController::class, 'reveal'])->name('participants.reveal');
 });

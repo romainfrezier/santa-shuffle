@@ -1,13 +1,16 @@
 <?php
 
 return [
+    'distinct_names_required' => 'Avant le tirage, distinguez les personnes de même prénom avec un nom, une initiale ou un surnom reconnaissable.',
     'event_created' => 'Votre Secret Santa est créé. Retrouvez-le dans Mes événements.',
     'exclusion_added' => 'Exclusion ajoutée. Elle s’applique dans le sens indiqué.',
+    'participant_confirmed' => 'Participation confirmée.',
+    'confirm_email_mismatch' => 'Cette adresse ne correspond pas à l’inscription sélectionnée.',
     'participant_removed' => 'Participation retirée.',
     'already_drawn' => 'Le tirage a déjà eu lieu. Les attributions sont conservées.',
-    'confirmation_required' => 'Chaque participant doit confirmer son e-mail avant le tirage.',
+    'confirmation_required' => 'Toutes les inscriptions doivent être confirmées avant le tirage.',
     'draw_completed' => 'Le tirage est terminé ! Les enveloppes sont prêtes et les e-mails sont en cours d’envoi.',
-    'invitation_sent' => 'Invitation en cours d’envoi. La personne doit confirmer son adresse.',
+    'invitation_sent' => 'Invitation en cours d’envoi. La personne pourra confirmer sa participation avec son lien privé.',
     'event_updated' => 'Événement mis à jour.',
     'reopen_forbidden' => 'La réouverture exige un tirage dont aucune enveloppe n’a été ouverte.',
     'event_reopened' => 'Inscriptions rouvertes. Les anciennes attributions sont annulées. Invitez la personne puis relancez le tirage.',
@@ -29,4 +32,7 @@ return [
     'draw_size' => 'Le tirage nécessite entre 3 et 100 participants distincts.',
     'draw_impossible' => 'Ces exclusions rendent le tirage impossible. Retirez une exclusion puis réessayez.',
     'javascript' => 'Activez JavaScript pour organiser votre Secret Santa.',
+    'share_site' => 'Organisez votre Secret Santa. Chacun ouvre son enveloppe en privé pour découvrir à qui offrir un cadeau.',
+    'share_invitation' => 'Ouvrez l’invitation de votre groupe pour découvrir les détails du Secret Santa.',
+    'share_image' => 'Santa Shuffle à côté d’une enveloppe crème fermée par un cachet de cire rouge cerise.',
 ];

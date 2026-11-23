@@ -6,7 +6,11 @@ A self-hosted Secret Santa for teams, built with Laravel 13, React 19, Inertia 3
 
 ## How it works
 
-Sign in with an email code, create an event, share its invitation link, and wait for participants to confirm by email. Set the gift date, budget, currency and message. Participants can add gift wishes. The organizer can exclude specific giver/recipient pairs and draw names once everyone has confirmed. Each person opens a private envelope to discover only their recipient.
+1. The organizer signs in with an email code, sets the gift date and budget, and shares the group invitation.
+2. Each participant enters a recognizable name and email address, optionally adds gift wishes, then activates their private invitation from their email. The organizer can also confirm a pending registration before the draw by entering the participant's matching address.
+3. Once everyone is confirmed, the organizer can set exclusions and draw names. Each participant opens their own envelope to discover who will receive their gift.
+
+After activating a private invitation, participants can return from the home page while their session is active. They can also bookmark their private invitation for use after the session expires. Anyone holding that bookmark can open the envelope.
 
 Events support 3–100 participants. Budgets use integer amounts in EUR, CHF, USD, CAD, GBP, JPY or AUD; there are no payments or currency conversions. Before any envelope is opened, the organizer can reopen registration, clear all assignments and draw again after adding people. The first reveal makes the assignments final.
 
@@ -22,7 +26,7 @@ Each event has participant invitations, confirmation status, exclusions, notific
 
 Canonical repository: [romainfrezier/santa-shuffle](https://github.com/romainfrezier/santa-shuffle). Its visibility and release state are managed separately from this source tree.
 
-Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm 12.2.1 (declared in `package.json`). The Composer lockfile was resolved and tested with PHP 8.5.
+Requirements: PHP 8.4.1+ with PDO SQLite (and PDO PostgreSQL for PostgreSQL), Composer 2, Node.js 26 LTS and npm 12.2.3 (declared in `package.json`). The Composer lockfile was resolved and tested with PHP 8.5.
 
 ```sh
 cp .env.example .env
@@ -50,7 +54,7 @@ docker compose --env-file .env.docker run --rm --no-deps app php artisan migrate
 docker compose --env-file .env.docker up -d
 ```
 
-The app binds to http://localhost:8080 on loopback only. App, worker and scheduler share the persistent `storage` volume. Migrations are explicit; startup does not run them automatically. Never regenerate `APP_KEY` for an existing installation: stored encrypted tokens depend on it.
+The app binds to http://localhost:8080 on loopback only. App, worker and scheduler share the persistent `storage` volume. Docker uses `/app/storage/database/database.sqlite` by default. Recreating the containers with the same volume or host directory preserves the database. See [how to verify the live mount and make an online checkpoint](docs/hardening.md#backup-and-purge). Migrations are explicit; startup does not run them automatically. Never regenerate `APP_KEY` for an existing installation: stored encrypted tokens depend on it.
 
 On a VPS, put an HTTPS reverse proxy in front of port 8080, set `APP_URL=https://your-domain` and `SESSION_SECURE_COOKIE=true`. Set `TRUSTED_PROXIES` to the proxy's exact IP or narrowly scoped CIDR as seen by the app (comma-separated for multiple proxies). Without this setting, visitors share the proxy's IP rate limits. Only `X-Forwarded-For` is trusted; production URLs still use `APP_URL`. Never use a wildcard or a network containing untrusted clients. A containerized reverse proxy can join the application network and use `app:8080`. Keep its address stable and do not expose plain HTTP directly to the internet. See [proxy configuration](docs/hardening.md#reverse-proxy-and-client-ip-addresses).
 

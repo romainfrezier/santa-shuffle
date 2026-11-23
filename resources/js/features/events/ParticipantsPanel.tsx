@@ -26,11 +26,13 @@ export default function ParticipantsPanel({
     return (
         <>
             <section className="paper">
-                <h2>
-                    {exchange.drawn
-                        ? t("The team is ready.")
-                        : t("Invite the right people.")}
-                </h2>
+                {!exchange.cancelled && (
+                    <h2>
+                        {exchange.drawn
+                            ? t("The team is ready.")
+                            : t("Invite the right people.")}
+                    </h2>
+                )}
                 {!exchange.drawn && !exchange.cancelled && (
                     <>
                         <p>

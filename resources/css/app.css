@@ -492,10 +492,7 @@ footer .brand svg {
     margin: 16px 0 0;
 }
 .people li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 0;
+    padding: 8px 0;
     border-top: 1px solid var(--line);
     font-size: 13px;
 }
@@ -511,13 +508,17 @@ footer .brand svg {
     font-size: 12px;
     font-weight: 800;
 }
-.person-name {
-    flex: 1;
-    overflow-wrap: anywhere;
+.person-identity {
+    display: grid;
+    gap: 2px;
     min-width: 0;
 }
+.person-name {
+    overflow-wrap: anywhere;
+    font-size: 15px;
+}
 .person-state {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--muted);
 }
 .text-button {
@@ -529,9 +530,6 @@ footer .brand svg {
     font-size: 12px;
     color: var(--muted);
     min-height: 44px;
-}
-.remove {
-    font-size: 10px;
 }
 .exclusions {
     margin-top: 28px;
@@ -804,11 +802,6 @@ footer .brand svg {
         font-size: 15px;
         margin: 23px 0;
     }
-    .hero-note {
-        font-size: 10px;
-        max-width: 240px;
-        line-height: 1.7;
-    }
     .hero-envelope {
         width: 260px;
         margin-top: 65px;
@@ -904,13 +897,6 @@ footer .brand svg {
         flex: 1;
         min-width: 150px;
     }
-    .people li {
-        gap: 9px;
-        flex-wrap: wrap;
-    }
-    .person-state {
-        font-size: 10px;
-    }
     .exclusion-form {
         grid-template-columns: 1fr;
     }
@@ -974,8 +960,7 @@ footer .brand svg {
 .management-details {
     margin-block: 1.5rem;
 }
-.management-details summary,
-.person-actions summary {
+.management-details summary {
     cursor: pointer;
     min-height: 44px;
     display: list-item;
@@ -985,13 +970,70 @@ footer .brand svg {
 .management-details form {
     margin-block: 1rem;
 }
-.person-actions {
-    min-width: 0;
+.person-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
 }
-.people li {
+summary.person-heading {
+    cursor: pointer;
+    list-style: none;
+}
+.person-heading::-webkit-details-marker {
+    display: none;
+}
+.person-toggle,
+.person-buttons button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--focus);
+    background: var(--paper);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 0 12px;
+    min-height: 44px;
+}
+.person-heading:hover .person-toggle,
+.person-actions[open] .person-toggle,
+.person-buttons button:hover {
+    background: #e8eddf;
+}
+.person-actions[open] .person-toggle svg {
+    transform: rotate(180deg);
+}
+.person-tools {
+    margin-block: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #faf5eb;
+}
+.person-tools form,
+.person-buttons {
+    display: flex;
     flex-wrap: wrap;
+    gap: 8px;
+    align-items: end;
 }
-.person-name,
+.person-tools form {
+    margin-bottom: 16px;
+}
+.person-tools .field {
+    flex: 1 1 190px;
+    min-width: 0;
+    margin: 0;
+}
+.person-tools .fine-print {
+    margin: 0 0 8px;
+}
+.person-buttons .remove {
+    color: var(--berry);
+}
 .workspace-heading h1 {
     overflow-wrap: anywhere;
 }
@@ -1071,12 +1113,30 @@ h2 {
     line-height: 1.8;
     margin: 0 0 30px;
 }
-.hero-note {
-    display: block;
-    font-size: 11px;
-    margin-top: 21px;
-    color: var(--muted);
-    line-height: 1.6;
+.saved-envelopes {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+}
+.saved-envelopes .button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.invitation-help {
+    margin-top: 12px;
+    max-width: 46ch;
+    font-size: 14px;
+}
+.invitation-help summary {
+    width: fit-content;
+    padding: 12px 0;
+    font-weight: 700;
+    cursor: pointer;
+}
+.invitation-help p {
+    margin: 0;
 }
 .shuffle-scene {
     position: relative;
@@ -1424,10 +1484,6 @@ h2 {
     }
     .eyebrow {
         font-size: 9px;
-    }
-    .hero-note {
-        margin-left: 0;
-        max-width: none;
     }
     .shuffle-scene {
         min-height: 430px;

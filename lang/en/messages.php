@@ -1,13 +1,16 @@
 <?php
 
 return [
+    'distinct_names_required' => 'Give participants with the same name a recognizable surname, initial or nickname before drawing.',
     'event_created' => 'Your Secret Santa is ready. Find it in My events.',
     'exclusion_added' => 'Exclusion added in the selected direction.',
+    'participant_confirmed' => 'Participation confirmed.',
+    'confirm_email_mismatch' => 'This address does not match the selected registration.',
     'participant_removed' => 'Participant removed.',
     'already_drawn' => 'The draw has already taken place. Assignments are preserved.',
-    'confirmation_required' => 'Every participant must confirm their email before the draw.',
+    'confirmation_required' => 'Every registration must be confirmed before the draw.',
     'draw_completed' => 'The draw is complete! Envelopes are ready and emails are being sent.',
-    'invitation_sent' => 'Invitation on its way. The recipient must confirm their email.',
+    'invitation_sent' => 'Invitation queued. The recipient can confirm using their private link.',
     'event_updated' => 'Event updated.',
     'reopen_forbidden' => 'You can reopen only if no envelope has been opened after the draw.',
     'event_reopened' => 'Registration reopened. Previous assignments are cancelled. Invite the new participant, then draw again.',
@@ -29,4 +32,7 @@ return [
     'draw_size' => 'The draw requires between 3 and 100 distinct participants.',
     'draw_impossible' => 'These exclusions make the draw impossible. Remove an exclusion and try again.',
     'javascript' => 'Enable JavaScript to organize your Secret Santa.',
+    'share_site' => 'Draw names for your Secret Santa. Each guest opens a private envelope to find out who they’re giving to.',
+    'share_invitation' => 'Open your group’s Secret Santa invitation to see the details of the gift exchange.',
+    'share_image' => 'Santa Shuffle beside a cream envelope with a cherry-red wax seal.',
 ];

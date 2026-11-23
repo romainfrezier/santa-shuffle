@@ -1,13 +1,16 @@
 <?php
 
 return [
+    'distinct_names_required' => 'Unterscheide Personen mit gleichem Namen vor der Auslosung durch einen erkennbaren Nachnamen, Anfangsbuchstaben oder Spitznamen.',
     'event_created' => 'Dein Wichteln ist erstellt. Du findest es unter Meine Events.',
     'exclusion_added' => 'Ausschluss in der angegebenen Richtung hinzugefügt.',
+    'participant_confirmed' => 'Teilnahme bestätigt.',
+    'confirm_email_mismatch' => 'Diese Adresse gehört nicht zur ausgewählten Anmeldung.',
     'participant_removed' => 'Teilnahme entfernt.',
     'already_drawn' => 'Die Auslosung hat bereits stattgefunden. Die Zuordnungen bleiben erhalten.',
-    'confirmation_required' => 'Alle Teilnehmenden müssen vor der Auslosung ihre E-Mail bestätigen.',
+    'confirmation_required' => 'Vor der Auslosung müssen alle Anmeldungen bestätigt sein.',
     'draw_completed' => 'Die Auslosung ist abgeschlossen! Die Umschläge sind bereit und die E-Mails werden versendet.',
-    'invitation_sent' => 'Die Einladung wird versendet. Die Person muss ihre E-Mail bestätigen.',
+    'invitation_sent' => 'Die Einladung wird versendet. Die Person kann ihre Teilnahme über ihren privaten Link bestätigen.',
     'event_updated' => 'Event aktualisiert.',
     'reopen_forbidden' => 'Die Anmeldung kann nur wieder geöffnet werden, wenn noch kein Umschlag geöffnet wurde.',
     'event_reopened' => 'Die Anmeldung ist wieder geöffnet. Alte Zuordnungen sind aufgehoben. Lade die neue Person ein und lose erneut aus.',
@@ -29,4 +32,7 @@ return [
     'draw_size' => 'Die Auslosung erfordert zwischen 3 und 100 verschiedene Teilnehmende.',
     'draw_impossible' => 'Diese Ausschlüsse machen die Auslosung unmöglich. Entferne einen Ausschluss und versuche es erneut.',
     'javascript' => 'Aktiviere JavaScript, um dein Wichteln zu organisieren.',
+    'share_site' => 'Organisiert euer Wichteln. Alle öffnen ihren eigenen Umschlag und erfahren, wem sie etwas schenken.',
+    'share_invitation' => 'Öffne die Einladung deiner Gruppe und erfahre mehr über euer Wichteln.',
+    'share_image' => 'Santa Shuffle neben einem cremefarbenen Umschlag mit kirschrotem Wachssiegel.',
 ];

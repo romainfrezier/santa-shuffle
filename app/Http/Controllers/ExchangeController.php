@@ -30,9 +30,12 @@ class ExchangeController extends Controller
         return to_route('exchanges.manage', $exchange)->with('notice', __('messages.event_created'));
     }
 
-    public function show(Exchange $exchange): Response
+    public function show(Exchange $exchange, SessionAccess $access): RedirectResponse|Response
     {
         $exchange->ensureActive();
+        if ($access->currentParticipant($exchange)) {
+            return to_route('participants.show', $exchange);
+        }
 
         return Inertia::render('Join', ['exchange' => ExchangeView::summary($exchange), 'count' => $exchange->participants()->whereNotNull('confirmed_at')->count()]);
     }

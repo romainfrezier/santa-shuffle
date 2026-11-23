@@ -1,13 +1,16 @@
 <?php
 
 return [
+    'distinct_names_required' => 'Antes del sorteo, distingue a las personas con el mismo nombre con un apellido, una inicial o un apodo reconocible.',
     'event_created' => 'Tu amigo invisible está listo. Encuéntralo en Mis eventos.',
     'exclusion_added' => 'Exclusión añadida en la dirección indicada.',
+    'participant_confirmed' => 'Participación confirmada.',
+    'confirm_email_mismatch' => 'Esta dirección no coincide con la inscripción seleccionada.',
     'participant_removed' => 'Participante eliminado.',
     'already_drawn' => 'El sorteo ya se ha realizado. Se conservan las asignaciones.',
-    'confirmation_required' => 'Cada participante debe confirmar su correo antes del sorteo.',
+    'confirmation_required' => 'Todas las inscripciones deben estar confirmadas antes del sorteo.',
     'draw_completed' => '¡Sorteo completado! Los sobres están listos y se están enviando los correos.',
-    'invitation_sent' => 'Invitación en camino. La persona debe confirmar su correo.',
+    'invitation_sent' => 'La invitación está en la cola de envío. La persona podrá confirmar su participación con su enlace privado.',
     'event_updated' => 'Evento actualizado.',
     'reopen_forbidden' => 'Solo puedes reabrir si no se ha abierto ningún sobre tras el sorteo.',
     'event_reopened' => 'Inscripciones reabiertas. Las asignaciones anteriores se han anulado. Invita a la nueva persona y repite el sorteo.',
@@ -29,4 +32,7 @@ return [
     'draw_size' => 'El sorteo requiere entre 3 y 100 participantes distintos.',
     'draw_impossible' => 'Estas exclusiones hacen imposible el sorteo. Elimina una exclusión e inténtalo de nuevo.',
     'javascript' => 'Activa JavaScript para organizar tu amigo invisible.',
+    'share_site' => 'Organiza tu amigo invisible. Cada persona abre su sobre en privado para descubrir a quién le hará un regalo.',
+    'share_invitation' => 'Abre la invitación de tu grupo para ver los detalles del amigo invisible.',
+    'share_image' => 'Santa Shuffle junto a un sobre de color crema con un sello de cera rojo cereza.',
 ];

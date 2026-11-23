@@ -33,6 +33,11 @@ class ParticipantController extends Controller
         return Inertia::render('Participant', ExchangeView::participant($exchange, $person));
     }
 
+    public function invitation(Exchange $exchange, SessionAccess $access): RedirectResponse
+    {
+        return to_route('access.show', $access->participant($exchange)->access_token);
+    }
+
     public function update(ParticipantProfileRequest $request, Exchange $exchange, UpdateParticipant $action): RedirectResponse
     {
         $action->execute($exchange, new SessionAccess($request->session()), [...$request->validated(), 'locale' => app()->getLocale()]);
