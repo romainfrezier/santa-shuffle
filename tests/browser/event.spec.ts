@@ -292,11 +292,9 @@ test("manage a pending participant on mobile and desktop", async ({ page }) => {
     await page.getByLabel("Son adresse e-mail").fill("camille@example.test");
     await page.getByRole("button", { name: "Envoyer l’invitation" }).click();
 
-    const row = page
-        .locator(".people li")
-        .filter({
-            has: page.locator(".person-name").filter({ hasText: "Camille" }),
-        });
+    const row = page.locator(".people li").filter({
+        has: page.locator(".person-name").filter({ hasText: "Camille" }),
+    });
     const toast = page.getByRole("button", { name: "Fermer la notification" });
     await toast.click();
     await expect(toast).toBeHidden();
